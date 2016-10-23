@@ -122,7 +122,7 @@ can simplify running it in some environments. The container is configured with a
 
 .. code-block:: console
 
-    $ docker run -it --rm dump1090-exporter
+    $ docker run -it --rm dump1090exporter
     usage: dump1090-exporter [-h] [--url <dump1090 url>]
     ...
 
@@ -131,8 +131,10 @@ line arguments to it:
 
 .. code-block:: console
 
-    $ docker run --rm -p 9105:9105 \
-      dump1090-exporter \
+    $ docker run -p 9105:9105 \
+      --detach \
+      --restart always \
+      clawsicus/dump1090exporter \
       --url=http://192.168.1.201:8080 \
       --latitude=-34.9285 \
       --longitude=138.6007 \

@@ -50,6 +50,7 @@ def main():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
+    args.origin = None
     if args.latitude and args.longitude:
         args.origin = (args.latitude, args.longitude)
 

@@ -2,8 +2,9 @@ FROM python:3.5
 MAINTAINER Chris Laws <clawsicus@gmail.com>
 COPY requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
-COPY src/dump1090-exporter.py /code/
-WORKDIR /code
+COPY . /tmp/
+WORKDIR /tmp
+RUN pip install .
 EXPOSE 9105
-ENTRYPOINT [ "python3", "./dump1090-exporter.py"]
+ENTRYPOINT ["dump1090exporter"]
 CMD ["--help"]

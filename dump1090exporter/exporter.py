@@ -186,25 +186,25 @@ class Dump1090Exporter(object):
     def initialise_metrics(self) -> None:
         ''' Create metrics '''
         self.g_messages = Gauge(
-            'messages',
+            'dump1090_messages',
             'Number of Mode-S messages accepted')
         self.svr.registry.register(self.g_messages)
 
         # aircraft
         self.g_recent_aircraft_observed = Gauge(
-            'recent_aircraft_observed',
+            'dump1090_recent_aircraft_observed',
             'Number of aircraft recently observed')
         self.svr.registry.register(self.g_recent_aircraft_observed)
         self.g_recent_aircraft_with_pos = Gauge(
-            'recent_aircraft_with_position',
+            'dump1090_recent_aircraft_with_position',
             'Number of aircraft recently observed with position')
         self.svr.registry.register(self.g_recent_aircraft_with_pos)
         self.g_recent_aircraft_with_mlat = Gauge(
-            'recent_aircraft_with_multilateration',
+            'dump1090_recent_aircraft_with_multilateration',
             'Number of aircraft recently observed with multilateration')
         self.svr.registry.register(self.g_recent_aircraft_with_mlat)
         self.g_recent_aircraft_max_range = Gauge(
-            'aircraft_recent_max_range',
+            'dump1090_aircraft_recent_max_range',
             'Maximum range of recently observed aircraft')
         self.svr.registry.register(self.g_recent_aircraft_max_range)
 
@@ -212,157 +212,157 @@ class Dump1090Exporter(object):
 
         # extract statistics about messages received from local SDR dongle
         self.g_stats_local_accepted = Gauge(
-            'stats_local_accepted',
+            'dump1090_stats_local_accepted',
             'Number of valid Mode S messages accepted with N-bit errors corrected')
         self.svr.registry.register(self.g_stats_local_accepted)
         self.g_stats_local_signal = Gauge(
-            'stats_local_signal_strength_dbFS',
+            'dump1090_stats_local_signal_strength_dbFS',
             'Signal strength dbFS')
         self.svr.registry.register(self.g_stats_local_signal)
         self.g_stats_local_peak_signal = Gauge(
-            'stats_local_peak_signal_strength_dbFS',
+            'dump1090_stats_local_peak_signal_strength_dbFS',
             'Peak signal strength dbFS')
         self.svr.registry.register(self.g_stats_local_peak_signal)
         self.g_stats_local_noise = Gauge(
-            'stats_local_noise_level_dbFS',
+            'dump1090_stats_local_noise_level_dbFS',
             'Noise level dbFS')
         self.svr.registry.register(self.g_stats_local_noise)
         self.g_stats_local_strong_signals = Gauge(
-            'stats_local_strong_signals',
+            'dump1090_stats_local_strong_signals',
             'Number of messages that had a signal power above -3dBFS')
         self.svr.registry.register(self.g_stats_local_strong_signals)
         self.g_stats_local_bad = Gauge(
-            'stats_local_bad',
+            'dump1090_stats_local_bad',
             "Number of Mode S preambles that didn't result in a valid message")
         self.svr.registry.register(self.g_stats_local_bad)
         self.g_stats_local_modes = Gauge(
-            'stats_local_modes',
+            'dump1090_stats_local_modes',
             'Number of Mode S preambles received')
         self.svr.registry.register(self.g_stats_local_modes)
         self.g_stats_local_modeac = Gauge(
-            'stats_local_modeac',
+            'dump1090_stats_local_modeac',
             'Number of Mode A/C preambles decoded')
         self.svr.registry.register(self.g_stats_local_modeac)
         self.g_stats_local_samples_dropped = Gauge(
-            'stats_local_samples_dropped',
+            'dump1090_stats_local_samples_dropped',
             'Number of samples dropped')
         self.svr.registry.register(self.g_stats_local_samples_dropped)
         self.g_stats_local_samples_processed = Gauge(
-            'stats_local_samples_processed',
+            'dump1090_stats_local_samples_processed',
             'Number of samples processed')
         self.svr.registry.register(self.g_stats_local_samples_processed)
         self.g_stats_local_unknown_icao = Gauge(
-            'stats_local_unknown_icao',
+            'dump1090_stats_local_unknown_icao',
             'Number of Mode S preambles containing unrecognized ICAO')
         self.svr.registry.register(self.g_stats_local_unknown_icao)
 
         # extract statistics about CPU use
         self.g_stats_cpu_background_ms = Gauge(
-            'stats_cpu_background_milliseconds',
+            'dump1090_stats_cpu_background_milliseconds',
             'Time spent in network I/O, processing and periodic tasks')
         self.svr.registry.register(self.g_stats_cpu_background_ms)
         self.g_stats_cpu_demod_ms = Gauge(
-            'stats_cpu_demod_milliseconds',
+            'dump1090_stats_cpu_demod_milliseconds',
             'Time spent demodulation and decoding data from SDR dongle')
         self.svr.registry.register(self.g_stats_cpu_demod_ms)
         self.g_stats_cpu_reader_ms = Gauge(
-            'stats_cpu_reader_milliseconds',
+            'dump1090_stats_cpu_reader_milliseconds',
             'Time spent reading sample data from SDR dongle')
         self.svr.registry.register(self.g_stats_cpu_reader_ms)
 
         # extract statistics for Compact Position Report message decoding
         self.g_stats_cpr_airborne = Gauge(
-            'stats_cpr_airborne',
+            'dump1090_stats_cpr_airborne',
             'Number of airborne CPR messages received')
         self.svr.registry.register(self.g_stats_cpr_airborne)
         self.g_stats_cpr_surface = Gauge(
-            'stats_cpr_surface',
+            'dump1090_stats_cpr_surface',
             'Number of surface CPR messages received')
         self.svr.registry.register(self.g_stats_cpr_surface)
         self.g_stats_cpr_filtered = Gauge(
-            'stats_cpr_filtered',
+            'dump1090_stats_cpr_filtered',
             'number of CPR messages ignored')
         self.svr.registry.register(self.g_stats_cpr_filtered)
         self.g_stats_cpr_global_bad = Gauge(
-            'stats_cpr_global_bad',
+            'dump1090_stats_cpr_global_bad',
             'Global positions that were rejected')
         self.svr.registry.register(self.g_stats_cpr_global_bad)
         self.g_stats_cpr_global_ok = Gauge(
-            'stats_cpr_global_ok',
+            'dump1090_stats_cpr_global_ok',
             'Global positions successfuly derived')
         self.svr.registry.register(self.g_stats_cpr_global_ok)
         self.g_stats_cpr_global_range = Gauge(
-            'stats_cpr_global_range',
+            'dump1090_stats_cpr_global_range',
             'Global positions rejected due to receiver max range check')
         self.svr.registry.register(self.g_stats_cpr_global_range)
         self.g_stats_cpr_global_skipped = Gauge(
-            'stats_cpr_global_skipped',
+            'dump1090_stats_cpr_global_skipped',
             'Global position attempts skipped due to missing data')
         self.svr.registry.register(self.g_stats_cpr_global_skipped)
         self.g_stats_cpr_global_speed = Gauge(
-            'stats_cpr_global_speed',
+            'dump1090_stats_cpr_global_speed',
             'Global positions rejected due to speed check')
         self.svr.registry.register(self.g_stats_cpr_global_speed)
         self.g_stats_cpr_local_aircraft_relative = Gauge(
-            'stats_cpr_local_aircraft_relative',
+            'dump1090_stats_cpr_local_aircraft_relative',
             'Local positions found relative to a previous aircraft position')
         self.svr.registry.register(self.g_stats_cpr_local_aircraft_relative)
         self.g_stats_cpr_local_ok = Gauge(
-            'stats_cpr_local_ok',
+            'dump1090_stats_cpr_local_ok',
             'Local (relative) positions successfully found')
         self.svr.registry.register(self.g_stats_cpr_local_ok)
         self.g_stats_cpr_local_range = Gauge(
-            'stats_cpr_local_range',
+            'dump1090_stats_cpr_local_range',
             'Local positions rejected due to receiver max range check')
         self.svr.registry.register(self.g_stats_cpr_local_range)
         self.g_stats_cpr_local_receiver_relative = Gauge(
-            'stats_cpr_local_receiver_relative',
+            'dump1090_stats_cpr_local_receiver_relative',
             'Local positions found relative to the receiver position')
         self.svr.registry.register(self.g_stats_cpr_local_receiver_relative)
         self.g_stats_cpr_local_skipped = Gauge(
-            'stats_cpr_local_skipped',
+            'dump1090_stats_cpr_local_skipped',
             'Local (relative) positions skipped due to missing data')
         self.svr.registry.register(self.g_stats_cpr_local_skipped)
         self.g_stats_cpr_local_speed = Gauge(
-            'stats_cpr_local_speed',
+            'dump1090_stats_cpr_local_speed',
             'Local positions rejected due to speed check')
         self.svr.registry.register(self.g_stats_cpr_local_speed)
 
         # extract total number of messages accepted by dump1090 from any source
         self.g_stats_messages = Gauge(
-            'stats_messages',
+            'dump1090_stats_messages',
             'Number of Mode-S messages processed')
         self.svr.registry.register(self.g_stats_messages)
 
         # extract statistics about messages received from remote clients
         self.g_stats_remote_accepted = Gauge(
-            'stats_remote_accepted',
+            'dump1090_stats_remote_accepted',
             'Number of valid Mode S messages accepted with N-bit errors corrected')
         self.svr.registry.register(self.g_stats_remote_accepted)
         self.g_stats_remote_bad = Gauge(
-            'stats_remote_bad',
+            'dump1090_stats_remote_bad',
             "Number of Mode S preambles that didn't result in a valid message")
         self.svr.registry.register(self.g_stats_remote_bad)
         self.g_stats_remote_modeac = Gauge(
-            'stats_remote_modeac',
+            'dump1090_stats_remote_modeac',
             'Number of Mode A/C preambles decoded')
         self.svr.registry.register(self.g_stats_remote_modeac)
         self.g_stats_remote_modes = Gauge(
-            'stats_remote_modes',
+            'dump1090_stats_remote_modes',
             'Number of Mode S preambles received')
         self.svr.registry.register(self.g_stats_remote_modes)
         self.g_stats_remote_unknown_icao = Gauge(
-            'stats_remote_unknown_icao',
+            'dump1090_stats_remote_unknown_icao',
             'Number of Mode S preambles containing unrecognized ICAO')
         self.svr.registry.register(self.g_stats_remote_unknown_icao)
 
         # extract statistics on aircraft tracks
         self.g_stats_tracks_all = Gauge(
-            'stats_tracks_all',
+            'dump1090_stats_tracks_all',
             'Number of tracks created')
         self.svr.registry.register(self.g_stats_tracks_all)
         self.g_stats_tracks_single_message = Gauge(
-            'stats_tracks_single_message',
+            'dump1090_stats_tracks_single_message',
             'Number of tracks consisting of only a single message')
         self.svr.registry.register(self.g_stats_tracks_single_message)
 

@@ -8,6 +8,29 @@ The dump1090 exporter collects statistics from a dump1090 service and
 exposes them to the Prometheus.io monitoring server for aggregation and
 later visualisation.
 
+Install
+-------
+
+The dump1090 exporter is written using Python 3 and will not work with
+Python 2. The dump1090 exporter is installed using the Python package manager
+*pip*. The *pip3* alias typically links to the Python3 package manager so
+the install would look like this:
+
+.. code-block:: console
+
+    pip3 install dump1090exporter
+
+If you are installing this package within a Python3 virtual environment then
+use:
+
+.. code-block:: console
+
+    pip install dump1090exporter
+
+
+Run
+---
+
 Once installed the dump1090 exporter can be easily run from the command
 line as the installation script includes a console entry point.
 
@@ -28,7 +51,8 @@ the default port (8080) used by dump1090 tool. The exporter exposes a
 service for Prometheus to scrape on port 9105 by default but this can
 be changed by specifying it with the *--port* argument.
 
-The example above also instructs the exporter to use a specific receiver origin (lat, lon). In this case it is for Adelaide, Australia. In most
+The example above also instructs the exporter to use a specific receiver
+origin (lat, lon). In this case it is for Adelaide, Australia. In most
 cases the dump1090 tool is not configured with the receivers position.
 By providing the exporter with the receiver location it can calculate
 ranges to aircraft. If the receiver position is already set within the
@@ -42,9 +66,12 @@ can be found by using the standard command line help request:
 
     $ dump1090-exporter -h
 
-The exporter fetches aircraft data (from *data/aircraft.json*) every 10 seconds. This can be modified by specifying a new value with the *--aircraft-interval* argument.
+The exporter fetches aircraft data (from *data/aircraft.json*) every 10
+seconds. This can be modified by specifying a new value with the
+*--aircraft-interval* argument.
 
-The exporter fetches statistics data (from *data/stats.json*) every 60 seconds, as the primary metrics being exported are extracted from the
+The exporter fetches statistics data (from *data/stats.json*) every 60
+seconds, as the primary metrics being exported are extracted from the
 *last1min* time period. This too can be modified by specifying a new
 value with the *--stats-interval* argument.
 
@@ -57,12 +84,15 @@ the */metrics* url. For example:
     $ curl -s http://0.0.0.0:9001/metrics
     # HELP messages Number of Mode-S messages accepted
     # TYPE messages gauge
-    messages{time_period="latest"} 190423
+    dump1090_messages{time_period="latest"} 190423
     # HELP recent_aircraft_observed Number of aircraft recently observed
     # TYPE recent_aircraft_observed gauge
-    recent_aircraft_observed{time_period="latest"} 1
+    dump1090_recent_aircraft_observed{time_period="latest"} 1
     ...
 
+The metrics exposed by the dump1090-exporter are all prefixed with the
+*dump1090_* string so as to provide a helpful namespacing which makes them
+easier to find in visualisation tools such as Grafana.
 
 The exporter exposes generalised metrics for statistics and uses the multi
 dimensional label capability of Prometheus metrics to include information
@@ -73,7 +103,7 @@ over the last 1 minute you would specify the time_period for that group:
 
 .. code-block:: console
 
-    stats_local_peak_signal{job="dump1090", time_period="last1min"}
+    dump1090_stats_local_peak_signal{job="dump1090", time_period="last1min"}
 
 In the stats.json data there are 5 top level keys that contain statistics for
 a different time period, defined by the "start" and "end" subkeys. The top
@@ -91,7 +121,6 @@ level keys are:
   the current time.
 
 By default only the *last1min* time period is exported.
-
 
 
 Prometheus Configuration
@@ -137,5 +166,5 @@ line arguments to it:
       clawsicus/dump1090exporter \
       --url=http://192.168.1.201:8080 \
       --latitude=-34.9285 \
-      --longitude=138.6007 \
+      --longitude=138.6007
 

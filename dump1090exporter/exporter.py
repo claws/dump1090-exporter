@@ -34,6 +34,73 @@ Dump1090Resources = collections.namedtuple(
 Position = collections.namedtuple(
     'Position', ['latitude', 'longitude'])
 
+# Define the metrics that will be exposed.
+# Each metric item consists of a 3-tuple where the first element represents
+# the internal name used to reference the metric object. The next two
+# elements represent the Prometheus metric label and help string.
+#
+MetricsSpecs = {
+    # define metrics extracted from the data/aircraft.json file
+    'aircraft': (
+        ('observed', 'recent_aircraft_observed', 'Number of aircraft recently observed'),
+        ('observed_with_pos', 'recent_aircraft_with_position', 'Number of aircraft recently observed with position'),
+        ('observed_with_mlat', 'recent_aircraft_with_multilateration', 'Number of aircraft recently observed with multilateration'),
+        ('max_range', 'aircraft_recent_max_range', 'Maximum range of recently observed aircraft'),
+        ('messages_total', 'messages_total', 'Number of Mode-S messages processed since start up')
+    ),
+    # define metrics extracted from the data/stats.json file
+    'stats': {
+        '': (
+            ('messages', 'stats_messages_total', 'Number of Mode-S messages processed'),
+        ),
+        'cpr': (
+            ('airborne', 'stats_cpr_airborne', 'Number of airborne CPR messages received'),
+            ('surface', 'stats_cpr_surface', 'Number of surface CPR messages received'),
+            ('filtered', 'stats_cpr_filtered', 'Number of CPR messages ignored'),
+            ('global_bad', 'stats_cpr_global_bad', 'Global positions that were rejected'),
+            ('global_ok', 'stats_cpr_global_ok', 'Global positions successfuly derived'),
+            ('global_range', 'stats_cpr_global_range', 'Global positions rejected due to receiver max range check'),
+            ('global_skipped', 'stats_cpr_global_skipped', 'Global position attempts skipped due to missing data'),
+            ('global_speed', 'stats_cpr_global_speed', 'Global positions rejected due to speed check'),
+            ('local_aircraft_relative', 'stats_cpr_local_aircraft_relative', 'Local positions found relative to a previous aircraft position'),
+            ('local_ok', 'stats_cpr_local_ok', 'Local (relative) positions successfully found'),
+            ('local_range', 'stats_cpr_local_range', 'Local positions rejected due to receiver max range check'),
+            ('local_receiver_relative', 'stats_cpr_local_receiver_relative', 'Local positions found relative to the receiver position'),
+            ('local_skipped', 'stats_cpr_local_skipped', 'Local (relative) positions skipped due to missing data'),
+            ('local_speed', 'stats_cpr_local_speed', 'Local positions rejected due to speed check'),
+        ),
+        'cpu': (
+            ('background', 'stats_cpu_background_milliseconds', 'Time spent in network I/O, processing and periodic tasks'),
+            ('demod', 'stats_cpu_demod_milliseconds', 'Time spent demodulation and decoding data from SDR dongle'),
+            ('reader', 'stats_cpu_reader_milliseconds', 'Time spent reading sample data from SDR dongle'),
+        ),
+        'local': (
+            ('accepted', 'stats_local_accepted', 'Number of valid Mode S messages accepted with N-bit errors corrected'),
+            ('signal', 'stats_local_signal_strength_dbFS', 'Signal strength dbFS'),
+            ('peak_signal', 'stats_local_peak_signal_strength_dbFS', 'Peak signal strength dbFS'),
+            ('noise', 'stats_local_noise_level_dbFS', 'Noise level dbFS'),
+            ('strong_signals', 'stats_local_strong_signals', 'Number of messages that had a signal power above -3dBFS'),
+            ('bad', 'stats_local_bad',"Number of Mode S preambles that didn't result in a valid message"),
+            ('modes', 'stats_local_modes', 'Number of Mode S preambles received'),
+            ('modeac', 'stats_local_modeac', 'Number of Mode A/C preambles decoded'),
+            ('samples_dropped', 'stats_local_samples_dropped','Number of samples dropped'),
+            ('samples_processed', 'stats_local_samples_processed', 'Number of samples processed'),
+            ('unknown_icao', 'stats_local_unknown_icao', 'Number of Mode S preambles containing unrecognized ICAO'),
+        ),
+        'remote': (
+            ('accepted', 'stats_remote_accepted', 'Number of valid Mode S messages accepted with N-bit errors corrected'),
+            ('bad', 'stats_remote_bad', "Number of Mode S preambles that didn't result in a valid message"),
+            ('modeac', 'stats_remote_modeac', 'Number of Mode A/C preambles decoded'),
+            ('modes', 'stats_remote_modes', 'Number of Mode S preambles received'),
+            ('unknown_icao', 'stats_remote_unknown_icao', 'Number of Mode S preambles containing unrecognized ICAO'),
+        ),
+        'tracks': (
+            ('all', 'stats_tracks_all', 'Number of tracks created'),
+            ('single_message', 'stats_tracks_single_message', 'Number of tracks consisting of only a single message'),
+        ),
+    }
+}
+
 
 def build_resources(base_url) -> Dump1090Resources:
     ''' Return a named tuple containing monitored dump1090 URLs '''
@@ -185,186 +252,25 @@ class Dump1090Exporter(object):
 
     def initialise_metrics(self) -> None:
         ''' Create metrics '''
-        self.g_messages = Gauge(
-            'dump1090_messages',
-            'Number of Mode-S messages accepted')
-        self.svr.registry.register(self.g_messages)
+        self.metrics = {'aircraft': {}, 'stats': {}}
 
         # aircraft
-        self.g_recent_aircraft_observed = Gauge(
-            'dump1090_recent_aircraft_observed',
-            'Number of aircraft recently observed')
-        self.svr.registry.register(self.g_recent_aircraft_observed)
-        self.g_recent_aircraft_with_pos = Gauge(
-            'dump1090_recent_aircraft_with_position',
-            'Number of aircraft recently observed with position')
-        self.svr.registry.register(self.g_recent_aircraft_with_pos)
-        self.g_recent_aircraft_with_mlat = Gauge(
-            'dump1090_recent_aircraft_with_multilateration',
-            'Number of aircraft recently observed with multilateration')
-        self.svr.registry.register(self.g_recent_aircraft_with_mlat)
-        self.g_recent_aircraft_max_range = Gauge(
-            'dump1090_aircraft_recent_max_range',
-            'Maximum range of recently observed aircraft')
-        self.svr.registry.register(self.g_recent_aircraft_max_range)
+        d = self.metrics['aircraft']
+        for name, label, doc in MetricsSpecs['aircraft']:
+            d[name] = self._create_gauge_metric(label, doc)
 
         # statistics
+        for group, metrics_specs in MetricsSpecs['stats'].items():
+            logger.debug(
+                "creating stats metrics for group: '{}'".format(group))
+            d = self.metrics['stats'].setdefault(group, {})
+            for name, label, doc in metrics_specs:
+                d[name] = self._create_gauge_metric(label, doc)
 
-        # extract statistics about messages received from local SDR dongle
-        self.g_stats_local_accepted = Gauge(
-            'dump1090_stats_local_accepted',
-            'Number of valid Mode S messages accepted with N-bit errors corrected')
-        self.svr.registry.register(self.g_stats_local_accepted)
-        self.g_stats_local_signal = Gauge(
-            'dump1090_stats_local_signal_strength_dbFS',
-            'Signal strength dbFS')
-        self.svr.registry.register(self.g_stats_local_signal)
-        self.g_stats_local_peak_signal = Gauge(
-            'dump1090_stats_local_peak_signal_strength_dbFS',
-            'Peak signal strength dbFS')
-        self.svr.registry.register(self.g_stats_local_peak_signal)
-        self.g_stats_local_noise = Gauge(
-            'dump1090_stats_local_noise_level_dbFS',
-            'Noise level dbFS')
-        self.svr.registry.register(self.g_stats_local_noise)
-        self.g_stats_local_strong_signals = Gauge(
-            'dump1090_stats_local_strong_signals',
-            'Number of messages that had a signal power above -3dBFS')
-        self.svr.registry.register(self.g_stats_local_strong_signals)
-        self.g_stats_local_bad = Gauge(
-            'dump1090_stats_local_bad',
-            "Number of Mode S preambles that didn't result in a valid message")
-        self.svr.registry.register(self.g_stats_local_bad)
-        self.g_stats_local_modes = Gauge(
-            'dump1090_stats_local_modes',
-            'Number of Mode S preambles received')
-        self.svr.registry.register(self.g_stats_local_modes)
-        self.g_stats_local_modeac = Gauge(
-            'dump1090_stats_local_modeac',
-            'Number of Mode A/C preambles decoded')
-        self.svr.registry.register(self.g_stats_local_modeac)
-        self.g_stats_local_samples_dropped = Gauge(
-            'dump1090_stats_local_samples_dropped',
-            'Number of samples dropped')
-        self.svr.registry.register(self.g_stats_local_samples_dropped)
-        self.g_stats_local_samples_processed = Gauge(
-            'dump1090_stats_local_samples_processed',
-            'Number of samples processed')
-        self.svr.registry.register(self.g_stats_local_samples_processed)
-        self.g_stats_local_unknown_icao = Gauge(
-            'dump1090_stats_local_unknown_icao',
-            'Number of Mode S preambles containing unrecognized ICAO')
-        self.svr.registry.register(self.g_stats_local_unknown_icao)
-
-        # extract statistics about CPU use
-        self.g_stats_cpu_background_ms = Gauge(
-            'dump1090_stats_cpu_background_milliseconds',
-            'Time spent in network I/O, processing and periodic tasks')
-        self.svr.registry.register(self.g_stats_cpu_background_ms)
-        self.g_stats_cpu_demod_ms = Gauge(
-            'dump1090_stats_cpu_demod_milliseconds',
-            'Time spent demodulation and decoding data from SDR dongle')
-        self.svr.registry.register(self.g_stats_cpu_demod_ms)
-        self.g_stats_cpu_reader_ms = Gauge(
-            'dump1090_stats_cpu_reader_milliseconds',
-            'Time spent reading sample data from SDR dongle')
-        self.svr.registry.register(self.g_stats_cpu_reader_ms)
-
-        # extract statistics for Compact Position Report message decoding
-        self.g_stats_cpr_airborne = Gauge(
-            'dump1090_stats_cpr_airborne',
-            'Number of airborne CPR messages received')
-        self.svr.registry.register(self.g_stats_cpr_airborne)
-        self.g_stats_cpr_surface = Gauge(
-            'dump1090_stats_cpr_surface',
-            'Number of surface CPR messages received')
-        self.svr.registry.register(self.g_stats_cpr_surface)
-        self.g_stats_cpr_filtered = Gauge(
-            'dump1090_stats_cpr_filtered',
-            'number of CPR messages ignored')
-        self.svr.registry.register(self.g_stats_cpr_filtered)
-        self.g_stats_cpr_global_bad = Gauge(
-            'dump1090_stats_cpr_global_bad',
-            'Global positions that were rejected')
-        self.svr.registry.register(self.g_stats_cpr_global_bad)
-        self.g_stats_cpr_global_ok = Gauge(
-            'dump1090_stats_cpr_global_ok',
-            'Global positions successfuly derived')
-        self.svr.registry.register(self.g_stats_cpr_global_ok)
-        self.g_stats_cpr_global_range = Gauge(
-            'dump1090_stats_cpr_global_range',
-            'Global positions rejected due to receiver max range check')
-        self.svr.registry.register(self.g_stats_cpr_global_range)
-        self.g_stats_cpr_global_skipped = Gauge(
-            'dump1090_stats_cpr_global_skipped',
-            'Global position attempts skipped due to missing data')
-        self.svr.registry.register(self.g_stats_cpr_global_skipped)
-        self.g_stats_cpr_global_speed = Gauge(
-            'dump1090_stats_cpr_global_speed',
-            'Global positions rejected due to speed check')
-        self.svr.registry.register(self.g_stats_cpr_global_speed)
-        self.g_stats_cpr_local_aircraft_relative = Gauge(
-            'dump1090_stats_cpr_local_aircraft_relative',
-            'Local positions found relative to a previous aircraft position')
-        self.svr.registry.register(self.g_stats_cpr_local_aircraft_relative)
-        self.g_stats_cpr_local_ok = Gauge(
-            'dump1090_stats_cpr_local_ok',
-            'Local (relative) positions successfully found')
-        self.svr.registry.register(self.g_stats_cpr_local_ok)
-        self.g_stats_cpr_local_range = Gauge(
-            'dump1090_stats_cpr_local_range',
-            'Local positions rejected due to receiver max range check')
-        self.svr.registry.register(self.g_stats_cpr_local_range)
-        self.g_stats_cpr_local_receiver_relative = Gauge(
-            'dump1090_stats_cpr_local_receiver_relative',
-            'Local positions found relative to the receiver position')
-        self.svr.registry.register(self.g_stats_cpr_local_receiver_relative)
-        self.g_stats_cpr_local_skipped = Gauge(
-            'dump1090_stats_cpr_local_skipped',
-            'Local (relative) positions skipped due to missing data')
-        self.svr.registry.register(self.g_stats_cpr_local_skipped)
-        self.g_stats_cpr_local_speed = Gauge(
-            'dump1090_stats_cpr_local_speed',
-            'Local positions rejected due to speed check')
-        self.svr.registry.register(self.g_stats_cpr_local_speed)
-
-        # extract total number of messages accepted by dump1090 from any source
-        self.g_stats_messages = Gauge(
-            'dump1090_stats_messages',
-            'Number of Mode-S messages processed')
-        self.svr.registry.register(self.g_stats_messages)
-
-        # extract statistics about messages received from remote clients
-        self.g_stats_remote_accepted = Gauge(
-            'dump1090_stats_remote_accepted',
-            'Number of valid Mode S messages accepted with N-bit errors corrected')
-        self.svr.registry.register(self.g_stats_remote_accepted)
-        self.g_stats_remote_bad = Gauge(
-            'dump1090_stats_remote_bad',
-            "Number of Mode S preambles that didn't result in a valid message")
-        self.svr.registry.register(self.g_stats_remote_bad)
-        self.g_stats_remote_modeac = Gauge(
-            'dump1090_stats_remote_modeac',
-            'Number of Mode A/C preambles decoded')
-        self.svr.registry.register(self.g_stats_remote_modeac)
-        self.g_stats_remote_modes = Gauge(
-            'dump1090_stats_remote_modes',
-            'Number of Mode S preambles received')
-        self.svr.registry.register(self.g_stats_remote_modes)
-        self.g_stats_remote_unknown_icao = Gauge(
-            'dump1090_stats_remote_unknown_icao',
-            'Number of Mode S preambles containing unrecognized ICAO')
-        self.svr.registry.register(self.g_stats_remote_unknown_icao)
-
-        # extract statistics on aircraft tracks
-        self.g_stats_tracks_all = Gauge(
-            'dump1090_stats_tracks_all',
-            'Number of tracks created')
-        self.svr.registry.register(self.g_stats_tracks_all)
-        self.g_stats_tracks_single_message = Gauge(
-            'dump1090_stats_tracks_single_message',
-            'Number of tracks consisting of only a single message')
-        self.svr.registry.register(self.g_stats_tracks_single_message)
+    def _create_gauge_metric(self, label, doc):
+        gauge = Gauge('dump1090_{}'.format(label), doc)
+        self.svr.registry.register(gauge)
+        return gauge
 
     async def updater_stats(self) -> None:
         '''
@@ -418,6 +324,7 @@ class Dump1090Exporter(object):
 
         :param stats: a dict containing dump1090 statistics data.
         '''
+        metrics = self.metrics['stats']
 
         for time_period in time_periods:
             try:
@@ -427,79 +334,22 @@ class Dump1090Exporter(object):
                     'Problem extracting time period: {}'.format(time_period))
                 continue
 
-            cpr = tp_stats['cpr']
-            cpu = tp_stats['cpu']
-            local = tp_stats['local']
-            remote = tp_stats['remote']
-            tracks = tp_stats['tracks']
-
             labels = dict(time_period=time_period)
 
-            # extract statistics for Compact Position Report message decoding
-            try:
-                self.g_stats_cpr_airborne.set(labels, cpr['airborne'])
-                self.g_stats_cpr_surface.set(labels, cpr['surface'])
-                self.g_stats_cpr_filtered.set(labels, cpr['filtered'])
-                self.g_stats_cpr_global_bad.set(labels, cpr['global_bad'])
-                self.g_stats_cpr_global_ok.set(labels, cpr['global_ok'])
-                self.g_stats_cpr_global_range.set(labels, cpr['global_range'])
-                self.g_stats_cpr_global_skipped.set(labels, cpr['global_skipped'])
-                self.g_stats_cpr_global_speed.set(labels, cpr['global_speed'])
-                self.g_stats_cpr_local_aircraft_relative.set(labels, cpr['local_aircraft_relative'])
-                self.g_stats_cpr_local_ok.set(labels, cpr['local_ok'])
-                self.g_stats_cpr_local_range.set(labels, cpr['local_range'])
-                self.g_stats_cpr_local_receiver_relative.set(labels, cpr['local_receiver_relative'])
-                self.g_stats_cpr_local_skipped.set(labels, cpr['local_skipped'])
-                self.g_stats_cpr_local_speed.set(labels, cpr['local_speed'])
-            except Exception:
-                logger.exception(
-                    'Problem extracting cpr items from: {}'.format(cpr))
-
-            # extract statistics about CPU use
-            try:
-                self.g_stats_cpu_background_ms.set(labels, cpu['background'])
-                self.g_stats_cpu_demod_ms.set(labels, cpu['demod'])
-                self.g_stats_cpu_reader_ms.set(labels, cpu['reader'])
-            except Exception:
-                logger.exception(
-                    'Problem extracting cpu items from: {}'.format(cpr))
-
-            # extract statistics about messages received from local SDR dongle
-            try:
-                self.g_stats_local_signal.set(labels, local['signal'])
-                self.g_stats_local_peak_signal.set(labels, local['peak_signal'])
-                self.g_stats_local_noise.set(labels, local['noise'])
-                self.g_stats_local_strong_signals.set(labels, local['strong_signals'])
-                self.g_stats_local_bad.set(labels, local['bad'])
-                self.g_stats_local_modes.set(labels, local['modes'])
-                self.g_stats_local_modeac.set(labels, local['modeac'])
-                self.g_stats_local_samples_dropped.set(labels, local['samples_dropped'])
-                self.g_stats_local_samples_processed.set(labels, local['samples_processed'])
-            except Exception:
-                logger.exception(
-                    'Problem extracting local items from: {}'.format(cpr))
-
-            # extract total number of messages accepted by dump1090 from any source
-            self.g_stats_messages.set(labels, tp_stats['messages'])
-
-            # extract statistics about messages received from remote clients
-            try:
-                self.g_stats_remote_accepted.set(labels, remote['accepted'][0])
-                self.g_stats_remote_bad.set(labels, remote['bad'])
-                self.g_stats_remote_modeac.set(labels, remote['modeac'])
-                self.g_stats_remote_modes.set(labels, remote['modes'])
-                self.g_stats_remote_unknown_icao.set(labels, remote['unknown_icao'])
-            except Exception:
-                logger.exception(
-                    'Problem extracting remote items from: {}'.format(cpr))
-
-            # extract statistics on aircraft tracks
-            try:
-                self.g_stats_tracks_all.set(labels, tracks['all'])
-                self.g_stats_tracks_single_message.set(labels, tracks['single_message'])
-            except Exception:
-                logger.exception(
-                    'Problem extracting tracks items from: {}'.format(cpr))
+            for key in metrics:
+                d = tp_stats[key] if key else tp_stats
+                for name, metric in metrics[key].items():
+                    try:
+                        value = d[name]
+                        # 'accepted' values are in a list
+                        if isinstance(value, list):
+                            value = value[0]
+                    except KeyError:
+                        logger.warning(
+                            "Problem extracting{}item '{}' from: {}".format(
+                                '{}'.format(key) if key else ' ', name, d))
+                        value = 0
+                    metric.set(labels, value)
 
     def process_aircraft(self,
                          aircraft: dict,
@@ -542,11 +392,12 @@ class Dump1090Exporter(object):
 
         # Add any current data into the 'latest' time_period bucket
         labels = dict(time_period='latest')
-        self.g_messages.set(labels, messages)
-        self.g_recent_aircraft_observed.set(labels, aircraft_observed)
-        self.g_recent_aircraft_with_pos.set(labels, aircraft_with_pos)
-        self.g_recent_aircraft_with_mlat.set(labels, aircraft_with_mlat)
-        self.g_recent_aircraft_max_range.set(labels, aircraft_max_range)
+        d = self.metrics['aircraft']
+        d['observed'].set(labels, aircraft_observed)
+        d['observed_with_pos'].set(labels, aircraft_with_pos)
+        d['observed_with_mlat'].set(labels, aircraft_with_mlat)
+        d['max_range'].set(labels, aircraft_max_range)
+        d['messages_total'].set(labels, messages)
 
         logger.debug(
             "aircraft: observed=%i, with_pos=%i, with_mlat=%i, max_range=%i, "

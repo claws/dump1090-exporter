@@ -1,12 +1,15 @@
 dump1090 Exporter
 =================
 
-A Prometheus metrics exporter for the dump1090 Mode S decoder for RTLSDR
-devices.
+`Dump1090 <https://github.com/MalcolmRobb/dump1090>`_ is a simple Mode S decoder
+for RTLSDR devices that is commonly used for tracking aircraft. Dump1090 makes
+a number of operating metrics available to track the performance of the tool
+and its environment.
 
-The dump1090 exporter collects statistics from a dump1090 service and
-exposes them to the Prometheus.io monitoring server for aggregation and
-later visualisation.
+The dump1090exporter collects statistics from dump1090 and exposes it to the
+`Prometheus <https://prometheus.io/>`_ monitoring server for aggregation and
+later visualisation (e.g. using `Grafana <https://grafana.net/dashboards/768>`_).
+
 
 Install
 -------
@@ -27,6 +30,9 @@ use:
 
     pip install dump1090exporter
 
+The dump1090exporter is also available as a Docker container. See the *Docker*
+section below for more details.
+
 
 Run
 ---
@@ -34,16 +40,23 @@ Run
 Once installed the dump1090 exporter can be easily run from the command
 line as the installation script includes a console entry point.
 
-Example usage:
+The dump1090 exporter accepts a number of command line arguments. These
+can be found by using the standard command line help request.
 
-    .. code-block:: console
+.. code-block:: console
 
-        $ dump1090exporter \
-          --url=http://192.168.1.201:8080 \
-          --port=9105 \
-          --latitude=-34.9285 \
-          --longitude=138.6007 \
-          --debug
+    $ dump1090exporter -h
+
+Below is an example usage.
+
+.. code-block:: console
+
+    $ dump1090exporter \
+      --url=http://192.168.1.201:8080 \
+      --port=9105 \
+      --latitude=-34.9285 \
+      --longitude=138.6007 \
+      --debug
 
 In the example above the exporter is instructed to monitor a dump1090
 instance running on a machine with the IP address 192.168.1.201 using
@@ -59,13 +72,6 @@ ranges to aircraft. If the receiver position is already set within the
 dump1090 tool (and accessible from the *data/receivers.json* resource)
 then the exporter will use that data as the origin.
 
-The dump1090 exporter accepts a number of command line arguments. These
-can be found by using the standard command line help request:
-
-.. code-block:: console
-
-    $ dump1090-exporter -h
-
 The exporter fetches aircraft data (from *data/aircraft.json*) every 10
 seconds. This can be modified by specifying a new value with the
 *--aircraft-interval* argument.
@@ -77,17 +83,18 @@ value with the *--stats-interval* argument.
 
 The metrics that the dump1090 exporter provides to Prometheus can be
 accessed for debug and viewing using curl or a browser by fetching from
-the */metrics* url. For example:
+the metrics route url. For example:
 
 .. code-block:: console
 
-    $ curl -s http://0.0.0.0:9001/metrics
-    # HELP messages Number of Mode-S messages accepted
-    # TYPE messages gauge
-    dump1090_messages{time_period="latest"} 190423
-    # HELP recent_aircraft_observed Number of aircraft recently observed
-    # TYPE recent_aircraft_observed gauge
-    dump1090_recent_aircraft_observed{time_period="latest"} 1
+    $ curl -s http://0.0.0.0:9105/metrics | grep -v "#"
+    dump1090_aircraft_recent_max_range{time_period="latest"} 1959.0337385807418
+    dump1090_messages_total{time_period="latest"} 90741
+    dump1090_recent_aircraft_observed{time_period="latest"} 4
+    dump1090_recent_aircraft_with_multilateration{time_period="latest"} 0
+    dump1090_recent_aircraft_with_position{time_period="latest"} 1
+    dump1090_stats_cpr_airborne{time_period="last1min"} 176
+    dump1090_stats_cpr_airborne{time_period="total"} 18293
     ...
 
 The metrics exposed by the dump1090-exporter are all prefixed with the
@@ -110,7 +117,7 @@ a different time period, defined by the "start" and "end" subkeys. The top
 level keys are:
 
 - *latest* which covers the time between the end of the "last1min" period and
-  the current time.
+  the current time. In my dump1090 setup this is always empty.
 - *last1min* which covers a recent 1-minute period. This may be up to 1 minute
   out of date (i.e. "end" may be up to 1 minute old)
 - *last5min* which covers a recent 5-minute period. As above, this may be up
@@ -120,16 +127,16 @@ level keys are:
 - *total* which covers the entire period from when dump1090 was started up to
   the current time.
 
-By default only the *last1min* time period is exported.
+By default only the *last1min* time period is exported as Prometheus can be
+used for accessing historical data.
 
 
 Prometheus Configuration
 ------------------------
 
-Once the dump1090 exporter is running then Prometheus can begin scraping it.
-However, Prometheus first needs to be told where to fetch the metrics from.
-
-This can be done by updating the Prometheus configuration file with a new entry under the 'scrape_configs' block, looking something like this:
+Prometheus needs to be told where to fetch the dump1090 metrics from. The
+Prometheus configuration file should be updated with a new entry under the
+'scrape_configs' block, that looks something like this:
 
 .. code-block:: yaml
 
@@ -139,19 +146,30 @@ This can be done by updating the Prometheus configuration file with a new entry 
         scrape_timeout: 5s
         static_configs:
           - targets: ['192.168.1.201:9105']
-            labels:
-              site: 'home'
+
+
+Visualisation
+-------------
+
+The Granfana visualisation tool can display nice looking charts and it
+supports Prometheus. A `dump1090export <https://grafana.net/dashboards/768>`_
+Grafana dashboard has been created to demonstrate how the data provided by the
+exporter can be visualised.
+
+.. figure:: screenshot-grafana.png
 
 
 Docker
 ------
 
 The dump1090 exporter has been packaged into a Docker container, which
-can simplify running it in some environments. The container is configured with an entry point that runs the dump1090 exporter with *--help* as the default arguement.
+can simplify running it in some environments. The container is configured
+with an entry point that runs the dump1090 exporter with *--help* as the
+default arguement.
 
 .. code-block:: console
 
-    $ docker run -it --rm dump1090exporter
+    $ docker run -it --rm clawsicus/dump1090exporter
     usage: dump1090-exporter [-h] [--url <dump1090 url>]
     ...
 

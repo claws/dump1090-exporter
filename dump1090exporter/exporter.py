@@ -9,9 +9,12 @@ import datetime
 import logging
 
 import aiohttp
+import aiohttp.errors
 
 from math import asin, cos, radians, sin, sqrt
 from aioprometheus import Service, Gauge
+
+from . import metrics
 
 # type annotations
 from typing import Any, Awaitable, Dict, Sequence, Tuple
@@ -34,75 +37,8 @@ Dump1090Resources = collections.namedtuple(
 Position = collections.namedtuple(
     'Position', ['latitude', 'longitude'])
 
-# Define the metrics that will be exposed.
-# Each metric item consists of a 3-tuple where the first element represents
-# the internal name used to reference the metric object. The next two
-# elements represent the Prometheus metric label and help string.
-#
-MetricsSpecs = {
-    # define metrics extracted from the data/aircraft.json file
-    'aircraft': (
-        ('observed', 'recent_aircraft_observed', 'Number of aircraft recently observed'),
-        ('observed_with_pos', 'recent_aircraft_with_position', 'Number of aircraft recently observed with position'),
-        ('observed_with_mlat', 'recent_aircraft_with_multilateration', 'Number of aircraft recently observed with multilateration'),
-        ('max_range', 'aircraft_recent_max_range', 'Maximum range of recently observed aircraft'),
-        ('messages_total', 'messages_total', 'Number of Mode-S messages processed since start up')
-    ),
-    # define metrics extracted from the data/stats.json file
-    'stats': {
-        '': (
-            ('messages', 'stats_messages_total', 'Number of Mode-S messages processed'),
-        ),
-        'cpr': (
-            ('airborne', 'stats_cpr_airborne', 'Number of airborne CPR messages received'),
-            ('surface', 'stats_cpr_surface', 'Number of surface CPR messages received'),
-            ('filtered', 'stats_cpr_filtered', 'Number of CPR messages ignored'),
-            ('global_bad', 'stats_cpr_global_bad', 'Global positions that were rejected'),
-            ('global_ok', 'stats_cpr_global_ok', 'Global positions successfuly derived'),
-            ('global_range', 'stats_cpr_global_range', 'Global positions rejected due to receiver max range check'),
-            ('global_skipped', 'stats_cpr_global_skipped', 'Global position attempts skipped due to missing data'),
-            ('global_speed', 'stats_cpr_global_speed', 'Global positions rejected due to speed check'),
-            ('local_aircraft_relative', 'stats_cpr_local_aircraft_relative', 'Local positions found relative to a previous aircraft position'),
-            ('local_ok', 'stats_cpr_local_ok', 'Local (relative) positions successfully found'),
-            ('local_range', 'stats_cpr_local_range', 'Local positions rejected due to receiver max range check'),
-            ('local_receiver_relative', 'stats_cpr_local_receiver_relative', 'Local positions found relative to the receiver position'),
-            ('local_skipped', 'stats_cpr_local_skipped', 'Local (relative) positions skipped due to missing data'),
-            ('local_speed', 'stats_cpr_local_speed', 'Local positions rejected due to speed check'),
-        ),
-        'cpu': (
-            ('background', 'stats_cpu_background_milliseconds', 'Time spent in network I/O, processing and periodic tasks'),
-            ('demod', 'stats_cpu_demod_milliseconds', 'Time spent demodulation and decoding data from SDR dongle'),
-            ('reader', 'stats_cpu_reader_milliseconds', 'Time spent reading sample data from SDR dongle'),
-        ),
-        'local': (
-            ('accepted', 'stats_local_accepted', 'Number of valid Mode S messages accepted with N-bit errors corrected'),
-            ('signal', 'stats_local_signal_strength_dbFS', 'Signal strength dbFS'),
-            ('peak_signal', 'stats_local_peak_signal_strength_dbFS', 'Peak signal strength dbFS'),
-            ('noise', 'stats_local_noise_level_dbFS', 'Noise level dbFS'),
-            ('strong_signals', 'stats_local_strong_signals', 'Number of messages that had a signal power above -3dBFS'),
-            ('bad', 'stats_local_bad',"Number of Mode S preambles that didn't result in a valid message"),
-            ('modes', 'stats_local_modes', 'Number of Mode S preambles received'),
-            ('modeac', 'stats_local_modeac', 'Number of Mode A/C preambles decoded'),
-            ('samples_dropped', 'stats_local_samples_dropped','Number of samples dropped'),
-            ('samples_processed', 'stats_local_samples_processed', 'Number of samples processed'),
-            ('unknown_icao', 'stats_local_unknown_icao', 'Number of Mode S preambles containing unrecognized ICAO'),
-        ),
-        'remote': (
-            ('accepted', 'stats_remote_accepted', 'Number of valid Mode S messages accepted with N-bit errors corrected'),
-            ('bad', 'stats_remote_bad', "Number of Mode S preambles that didn't result in a valid message"),
-            ('modeac', 'stats_remote_modeac', 'Number of Mode A/C preambles decoded'),
-            ('modes', 'stats_remote_modes', 'Number of Mode S preambles received'),
-            ('unknown_icao', 'stats_remote_unknown_icao', 'Number of Mode S preambles containing unrecognized ICAO'),
-        ),
-        'tracks': (
-            ('all', 'stats_tracks_all', 'Number of tracks created'),
-            ('single_message', 'stats_tracks_single_message', 'Number of tracks consisting of only a single message'),
-        ),
-    }
-}
 
-
-def build_resources(base_url) -> Dump1090Resources:
+def build_resources(base_url: str) -> Dump1090Resources:
     ''' Return a named tuple containing monitored dump1090 URLs '''
     resources = Dump1090Resources(
         base_url,
@@ -116,14 +52,16 @@ async def fetch(url: str,
                 loop: AbstractEventLoop = None) -> Dict[Any, Any]:
     ''' Fetch JSON format data from a web resource and return a dict '''
     loop = loop or asyncio.get_event_loop()
-    with aiohttp.ClientSession(loop=loop) as session:
-        logger.debug('fetching %s', url)
-        async with session.get(url) as resp:
-            if not resp.status == 200:
-                raise Exception(
-                    'Error fetching {}'.format(url))
-            data = await resp.json()
-            return data
+    try:
+        with aiohttp.ClientSession(loop=loop) as session:
+            logger.debug('fetching %s', url)
+            async with session.get(url) as resp:
+                if not resp.status == 200:
+                    raise Exception('Error fetching {}'.format(url))
+                data = await resp.json()
+                return data
+    except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError):
+        raise Exception('Error fetching {}'.format(url)) from None
 
 
 def haversine_distance(pos1: Position,
@@ -156,37 +94,42 @@ def haversine_distance(pos1: Position,
 
 class Dump1090Exporter(object):
     '''
-
-    A Prometheus metrics naming convention used within this class. Each
-    metric attribute is prefixed with a character indicating the kind of
-    metrics that is referenced. For example, attributes holding a Gauge
-    metric reference are prefixed with 'g_'. Similarly, an attribute
-    holding a Counter metric reference would use a 'c_'.
+    This class is responsible for fetching, parsing and exporting dump1090
+    metrics to Prometheus.
     '''
 
     def __init__(self,
                  url: str,
                  host: str = None,
-                 port: int = 9001,
+                 port: int = 9105,
                  aircraft_interval: int = 10,
                  stats_interval: int = 60,
-                 time_periods: Sequence[str] = ('last1min',),
+                 time_periods: Sequence[str] = ('last1min', ),
                  origin: PositionType = None,
+                 fetch_timeout: float = 2.0,
                  loop: AbstractEventLoop = None) -> None:
         '''
         :param url: The base dump1090 web address.
-        :param host: The host to expose Prometheus metrics on.
-        :param port: The port to expose Prometheus metrics on.
+        :param host: The host to expose Prometheus metrics on. Defaults
+          to listen on all interfaces.
+        :param port: The port to expose Prometheus metrics on. Defaults to
+          port 9105.
         :param aircraft_interval: number of seconds between processing the
-          dump1090 aircraft data.
+          dump1090 aircraft data. Defaults to 10 seconds.
         :param stats_interval: number of seconds between processing the
-          dump1090 stats data.
-        :param time_periods: A list of time periods to extract from the
+          dump1090 stats data. Defaults to 60 seconds as the data only
+          seems to be updated at 60 second intervals.
+        :param time_periods: A list of time period keys to extract from the
           statistics data. By default this is just the 'last1min' time
-          period.
+          period as Prometheus can provide the historical access.
         :param origin: a tuple of (lat, lon) representing the receiver
           location. The origin is used for distance calculations with
-          aircraft data.
+          aircraft data. If it is not provided then range calculations
+          can not be performed and the maximum range metric will always
+          be zero.
+        :param fetch_timeout: The number of seconds to wait for a response
+          from dump1090.
+        :param loop: the event loop.
         '''
         self.dump1090urls = build_resources(url)
         self.loop = loop or asyncio.get_event_loop()
@@ -196,14 +139,15 @@ class Dump1090Exporter(object):
         self.stats_interval = datetime.timedelta(seconds=stats_interval)
         self.stats_time_periods = time_periods
         self.origin = Position(*origin) if origin else None
+        self.fetch_timeout = fetch_timeout
         self.svr = Service(loop=loop)
         self.stats_task = None  # type: asyncio.Task
         self.aircraft_task = None  # type: asyncio.Task
         self.initialise_metrics()
-        logger.info('dump1090 url: %s', self.dump1090urls.base)
-        logger.info('aircraft refresh interval: %s', self.aircraft_interval)
-        logger.info('statistics refresh interval: %s', self.stats_interval)
-        logger.info('origin: %s', self.origin)
+        logger.info('Monitoring dump1090 at url: %s', self.dump1090urls.base)
+        logger.info('Refresh rates: aircraft=%s, statstics=%s',
+                    self.aircraft_interval, self.stats_interval)
+        logger.info('Origin: %s', self.origin)
 
     async def start(self) -> None:
         ''' Start the monitor '''
@@ -216,7 +160,7 @@ class Dump1090Exporter(object):
         # command line configuration.
         try:
             receiver = await asyncio.wait_for(
-                fetch(self.dump1090urls.receiver), 3.0)
+                fetch(self.dump1090urls.receiver), self.fetch_timeout)
             if receiver:
                 if 'lat' in receiver and 'lon' in receiver:
                     self.origin = Position(receiver['lat'], receiver['lon'])
@@ -256,13 +200,11 @@ class Dump1090Exporter(object):
 
         # aircraft
         d = self.metrics['aircraft']
-        for name, label, doc in MetricsSpecs['aircraft']:
+        for name, label, doc in metrics.Specs['aircraft']:
             d[name] = self._create_gauge_metric(label, doc)
 
         # statistics
-        for group, metrics_specs in MetricsSpecs['stats'].items():
-            logger.debug(
-                "creating stats metrics for group: '{}'".format(group))
+        for group, metrics_specs in metrics.Specs['stats'].items():
             d = self.metrics['stats'].setdefault(group, {})
             for name, label, doc in metrics_specs:
                 d[name] = self._create_gauge_metric(label, doc)
@@ -281,14 +223,15 @@ class Dump1090Exporter(object):
             start = datetime.datetime.now()
             try:
                 stats = await asyncio.wait_for(
-                    fetch(self.dump1090urls.stats), 3.0)
+                    fetch(self.dump1090urls.stats), self.fetch_timeout)
+                self.process_stats(
+                    stats, time_periods=self.stats_time_periods)
             except asyncio.TimeoutError:
                 logger.error(
                     'request for dump1090 stats data timed out')
-                return
-
-            self.process_stats(
-                stats, time_periods=self.stats_time_periods)
+            except Exception:
+                logger.exception(
+                    'error requesting dump1090 stats data')
 
             # wait until next collection time
             end = datetime.datetime.now()
@@ -304,13 +247,14 @@ class Dump1090Exporter(object):
             start = datetime.datetime.now()
             try:
                 aircraft = await asyncio.wait_for(
-                    fetch(self.dump1090urls.aircraft), 3.0)
+                    fetch(self.dump1090urls.aircraft), self.fetch_timeout)
+                self.process_aircraft(aircraft)
             except asyncio.TimeoutError:
                 logger.error(
                     'request for dump1090 aircraft data timed out')
-                return
-
-            self.process_aircraft(aircraft)
+            except Exception:
+                logger.exception(
+                    'error requesting dump1090 aircraft data')
 
             # wait until next collection time
             end = datetime.datetime.now()
@@ -348,7 +292,7 @@ class Dump1090Exporter(object):
                         logger.warning(
                             "Problem extracting{}item '{}' from: {}".format(
                                 '{}'.format(key) if key else ' ', name, d))
-                        value = 0
+                        value = None
                     metric.set(labels, value)
 
     def process_aircraft(self,
@@ -360,7 +304,8 @@ class Dump1090Exporter(object):
         :param threshold: only let aircraft seen within this threshold to
           contribute to the metrics.
         '''
-        # Ensure aircraft dict always contains all keys
+        # Ensure aircraft dict always contains all keys, as optional
+        # items are not always present.
         for entry in aircraft['aircraft']:
             for key in AircraftKeys:
                 entry.setdefault(key, None)

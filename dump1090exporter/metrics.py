@@ -51,7 +51,7 @@ Specs = {
         ('observed', 'recent_aircraft_observed', 'Number of aircraft recently observed'),
         ('observed_with_pos', 'recent_aircraft_with_position', 'Number of aircraft recently observed with position'),
         ('observed_with_mlat', 'recent_aircraft_with_multilateration', 'Number of aircraft recently observed with multilateration'),
-        ('max_range', 'aircraft_recent_max_range', 'Maximum range of recently observed aircraft'),
+        ('max_range', 'recent_aircraft_max_range', 'Maximum range of recently observed aircraft'),
         ('messages_total', 'messages_total', 'Number of Mode-S messages processed since start up')
     ),
     'stats': {

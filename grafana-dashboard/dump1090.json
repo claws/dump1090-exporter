@@ -280,7 +280,7 @@
           },
           "targets": [
             {
-              "expr": "dump1090_aircraft_recent_max_range{job=\"dump1090\", time_period=\"latest\"}",
+              "expr": "dump1090_recent_aircraft_max_range{job=\"dump1090\", time_period=\"latest\"}",
               "intervalFactor": 2,
               "legendFormat": "",
               "metric": "dump1090_aircraft_recent_max_range",
@@ -613,9 +613,9 @@
             {
               "expr": "dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"} - dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"}",
               "intervalFactor": 2,
+              "legendFormat": "Wo/ position",
               "refId": "D",
-              "step": 10,
-              "legendFormat": "Wo/ position"
+              "step": 10
             },
             {
               "expr": "dump1090_recent_aircraft_with_multilateration{job=\"dump1090\", time_period=\"latest\"}",
@@ -659,16 +659,16 @@
           ]
         },
         {
-          "title": "",
-          "error": false,
-          "span": 3,
-          "editable": true,
-          "type": "text",
-          "isNew": true,
-          "id": 14,
-          "mode": "markdown",
           "content": "#### Aircraft\nThis graph displays the counts of aircraft (e.g unique ICAO) being reported. Aircraft are grouped into total aircraft being reported, aircraft reported with a position, aircraft reported without a position and aircraft reported that have multi-lateration reports.",
-          "links": []
+          "editable": true,
+          "error": false,
+          "id": 14,
+          "isNew": true,
+          "links": [],
+          "mode": "markdown",
+          "span": 3,
+          "title": "",
+          "type": "text"
         }
       ],
       "title": "Row"
@@ -718,7 +718,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "dump1090_aircraft_recent_max_range{job=\"dump1090\"}",
+              "expr": "dump1090_recent_aircraft_max_range{job=\"dump1090\"}",
               "intervalFactor": 2,
               "legendFormat": "{{ time_period }}",
               "metric": "",
@@ -760,16 +760,16 @@
           ]
         },
         {
-          "title": "",
-          "error": false,
-          "span": 3,
-          "editable": true,
-          "type": "text",
-          "isNew": true,
-          "id": 15,
-          "mode": "markdown",
           "content": "##### Maximum Range\nThis graph displays the maximum range of the currently observed aircraft reporting a position.",
-          "links": []
+          "editable": true,
+          "error": false,
+          "id": 15,
+          "isNew": true,
+          "links": [],
+          "mode": "markdown",
+          "span": 3,
+          "title": "",
+          "type": "text"
         }
       ],
       "title": "New row"
@@ -866,16 +866,16 @@
           ]
         },
         {
-          "title": "",
-          "error": false,
-          "span": 3,
-          "editable": true,
-          "type": "text",
-          "isNew": true,
-          "id": 16,
-          "mode": "markdown",
           "content": "##### Messages\nThis graph displays the messages received per second.",
-          "links": []
+          "editable": true,
+          "error": false,
+          "id": 16,
+          "isNew": true,
+          "links": [],
+          "mode": "markdown",
+          "span": 3,
+          "title": "",
+          "type": "text"
         }
       ],
       "title": "New row"
@@ -984,16 +984,16 @@
           ]
         },
         {
-          "title": "",
-          "error": false,
-          "span": 3,
-          "editable": true,
-          "type": "text",
-          "isNew": true,
-          "id": 17,
-          "mode": "markdown",
           "content": "##### Signal Strength\nThis graph displays the signal levels reported for noise, mean and peak signal levels. The values are reported in [dbFS](https://en.wikipedia.org/wiki/DBFS).",
-          "links": []
+          "editable": true,
+          "error": false,
+          "id": 17,
+          "isNew": true,
+          "links": [],
+          "mode": "markdown",
+          "span": 3,
+          "title": "",
+          "type": "text"
         }
       ],
       "title": "New row"
@@ -1098,25 +1098,18 @@
           ]
         },
         {
-          "title": "",
-          "error": false,
-          "span": 3,
-          "editable": true,
-          "type": "text",
-          "isNew": true,
-          "id": 18,
-          "mode": "markdown",
           "content": "##### CPU Utilisation\nThis graph displays how much CPU time is used by the dump1090 tool. demod reports the time spent demodulating and decoding data from the USB SDR dongle. usb reports time spent reading sample data from the USB SDR dongle. other reports time spent doing network I/O, processing network messages, and periodic tasks.\n",
-          "links": []
+          "editable": true,
+          "error": false,
+          "id": 18,
+          "isNew": true,
+          "links": [],
+          "mode": "markdown",
+          "span": 3,
+          "title": "",
+          "type": "text"
         }
       ],
-      "title": "New row"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [],
       "title": "New row"
     }
   ],
@@ -1157,7 +1150,7 @@
   },
   "refresh": "1m",
   "schemaVersion": 12,
-  "version": 24,
+  "version": 29,
   "links": [],
   "gnetId": null
 }

@@ -7,6 +7,7 @@ import asyncio
 import collections
 import datetime
 import logging
+import math
 
 import aiohttp
 import aiohttp.errors
@@ -289,10 +290,13 @@ class Dump1090Exporter(object):
                         if isinstance(value, list):
                             value = value[0]
                     except KeyError:
-                        logger.warning(
-                            "Problem extracting{}item '{}' from: {}".format(
-                                '{}'.format(key) if key else ' ', name, d))
-                        value = None
+                        # 'signal' and 'peak_signal' are not present if
+                        # there are no aircraft.
+                        if name not in ['peak_signal', 'signal']:
+                            logger.warning(
+                                "Problem extracting{}item '{}' from: {}".format(
+                                    ' {} '.format(key) if key else ' ', name, d))
+                        value = math.nan
                     metric.set(labels, value)
 
     def process_aircraft(self,

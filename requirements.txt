@@ -1,2 +1,2 @@
-aiohttp
+aiohttp==0.21.6
 aioprometheus

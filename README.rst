@@ -14,10 +14,10 @@ later visualisation (e.g. using `Grafana <https://grafana.net/dashboards/768>`_)
 Install
 -------
 
-The dump1090 exporter is written using Python 3 and will not work with
-Python 2. The dump1090 exporter is installed using the Python package manager
-*pip*. The *pip3* alias typically links to the Python3 package manager so
-the install would look like this:
+The dump1090 exporter is written using Python 3 (Python3.5+) and will not work 
+with Python 2. The dump1090 exporter is installed using the Python package 
+manager *pip*. The *pip3* alias typically links to the Python3 package manager 
+so the install would look like this:
 
 .. code-block:: console
 

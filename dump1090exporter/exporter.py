@@ -10,7 +10,6 @@ import logging
 import math
 
 import aiohttp
-import aiohttp.errors
 
 from math import asin, cos, radians, sin, sqrt
 from aioprometheus import Service, Gauge
@@ -50,19 +49,21 @@ def build_resources(base_url: str) -> Dump1090Resources:
 
 
 async def fetch(url: str,
+                session: aiohttp.ClientSession,
+                timeout: float = None,
                 loop: AbstractEventLoop = None) -> Dict[Any, Any]:
     ''' Fetch JSON format data from a web resource and return a dict '''
-    loop = loop or asyncio.get_event_loop()
     try:
-        with aiohttp.ClientSession(loop=loop) as session:
-            logger.debug('fetching %s', url)
-            async with session.get(url) as resp:
-                if not resp.status == 200:
-                    raise Exception('Error fetching {}'.format(url))
-                data = await resp.json()
-                return data
-    except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError):
-        raise Exception('Error fetching {}'.format(url)) from None
+        logger.debug('fetching %s', url)
+        async with session.get(url, timeout=timeout) as resp:
+            if not resp.status == 200:
+                raise Exception('Fetch failed {}: {}'.format(resp.status, url))
+            data = await resp.json()
+            return data
+    except asyncio.TimeoutError:
+        raise Exception('Request timed out to {}'.format(url)) from None
+    except aiohttp.ClientError as exc:
+        raise Exception('Client error {}, {}'.format(exc, url)) from None
 
 
 def haversine_distance(pos1: Position,
@@ -74,7 +75,7 @@ def haversine_distance(pos1: Position,
     used.
 
     The haversine formula provides great-circle distances between two points
-    on a sphere from their latitudes and longitudes using a the law of
+    on a sphere from their latitudes and longitudes using the law of
     haversines, relating the sides and angles of spherical triangles.
 
     `Reference <https://en.wikipedia.org/wiki/Haversine_formula>`_
@@ -136,6 +137,7 @@ class Dump1090Exporter(object):
         self.loop = loop or asyncio.get_event_loop()
         self.host = host
         self.port = port
+        self.session = aiohttp.ClientSession(loop=self.loop)
         self.aircraft_interval = datetime.timedelta(seconds=aircraft_interval)
         self.stats_interval = datetime.timedelta(seconds=stats_interval)
         self.stats_time_periods = time_periods
@@ -160,23 +162,25 @@ class Dump1090Exporter(object):
         # the dump1090 receiver data. If present this data will override
         # command line configuration.
         try:
-            receiver = await asyncio.wait_for(
-                fetch(self.dump1090urls.receiver), self.fetch_timeout)
+            receiver = await fetch(self.dump1090urls.receiver,
+                                   self.session,
+                                   timeout=self.fetch_timeout)
             if receiver:
                 if 'lat' in receiver and 'lon' in receiver:
                     self.origin = Position(receiver['lat'], receiver['lon'])
                     logger.info(
                         'Origin successfully extracted from receiver data: %s',
                         self.origin)
-        except asyncio.TimeoutError:
-            logger.error(
-                'request for dump1090 receiver data timed out')
+        except Exception as exc:
+            logger.error('Error fetching dump1090 receiver data: {}'.format(exc))
 
         self.stats_task = asyncio.ensure_future(self.updater_stats())
         self.aircraft_task = asyncio.ensure_future(self.updater_aircraft())
 
     async def stop(self) -> None:
         ''' Stop the monitor '''
+        self.session.close()
+
         if self.stats_task:
             self.stats_task.cancel()
             try:
@@ -223,16 +227,13 @@ class Dump1090Exporter(object):
         while True:
             start = datetime.datetime.now()
             try:
-                stats = await asyncio.wait_for(
-                    fetch(self.dump1090urls.stats), self.fetch_timeout)
+                stats = await fetch(self.dump1090urls.stats,
+                                    self.session,
+                                    timeout=self.fetch_timeout)
                 self.process_stats(
                     stats, time_periods=self.stats_time_periods)
-            except asyncio.TimeoutError:
-                logger.error(
-                    'request for dump1090 stats data timed out')
-            except Exception:
-                logger.exception(
-                    'error requesting dump1090 stats data')
+            except Exception as exc:
+                logger.error('Error fetching dump1090 stats data: {}'.format(exc))
 
             # wait until next collection time
             end = datetime.datetime.now()
@@ -247,15 +248,12 @@ class Dump1090Exporter(object):
         while True:
             start = datetime.datetime.now()
             try:
-                aircraft = await asyncio.wait_for(
-                    fetch(self.dump1090urls.aircraft), self.fetch_timeout)
+                aircraft = await fetch(self.dump1090urls.aircraft,
+                                       self.session,
+                                       timeout=self.fetch_timeout)
                 self.process_aircraft(aircraft)
-            except asyncio.TimeoutError:
-                logger.error(
-                    'request for dump1090 aircraft data timed out')
-            except Exception:
-                logger.exception(
-                    'error requesting dump1090 aircraft data')
+            except Exception as exc:
+                logger.error('Error fetching dump1090 aircraft data: {}'.format(exc))
 
             # wait until next collection time
             end = datetime.datetime.now()

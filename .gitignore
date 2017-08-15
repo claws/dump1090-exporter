@@ -89,3 +89,5 @@ ENV/
 .ropeproject
 
 tools/dev_venv
+.mypy_cache
+

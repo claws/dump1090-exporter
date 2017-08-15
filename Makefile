@@ -1,6 +1,6 @@
 # This makefile has been created to help developers perform common actions.
 # It assumes it is operating in an environment, such as a virtual env,
-# where the python command links to Python3.5 executable.
+# where the python command links to Python3 executable.
 
 .PHONY: check_types clean clean.scrub docs dist help
 .PHONY: sdist style style.fix test test.verbose
@@ -55,7 +55,7 @@ style.fix:
 
 # help: check_types                    - check type hint annotations
 check_types:
-	@MYPYPATH=$VIRTUAL_ENV/lib/python3.5/site-packages mypy -p dump1090exporter --fast-parser -s
+	@MYPYPATH=$VIRTUAL_ENV/lib/python*/site-packages mypy -p dump1090exporter --ignore-missing-imports
 
 
 # help: docs                           - generate project documentation
@@ -65,19 +65,19 @@ docs:
 	@cd docs; make html
 
 
-# help: dist                           - create a source distribution package
+# help: dist                           - create a wheel distribution package
 dist: clean
-	@python setup.py sdist
+	@python setup.py bdist_wheel
 
 
-# help: dist.test                      - test a source distribution package
+# help: dist.test                      - test a wheel distribution package
 dist.test: dist
-	@cd dist && ./test.bash ./dump1090exporter-*.tar.gz
+	@cd dist && ./test.bash ./dump1090exporter-*-py3-none-any.whl
 
 
-# help: dist.upload                     - upload a source distribution package
-dist.upload: clean
-	@python setup.py sdist upload
+# help: dist.upload                     - upload a wheel distribution package
+dist.upload: dist
+	@twine upload dist/dump1090exporter-*-py3-none-any.whl
 
 
 # Keep these lines at the end of the file to retain nice help

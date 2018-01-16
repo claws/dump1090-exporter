@@ -1,7 +1,13 @@
 dump1090 Exporter
 =================
 
-`Dump1090 <https://github.com/MalcolmRobb/dump1090>`_ is a simple Mode S decoder
+.. note::
+
+    This exporter currently only works with the mutability fork of dump1090.
+    The fork provides the ``/data/aicraft.json`` and ``/data/receivers.json``
+    routes used by the exporter to fetch metrics.
+
+`Dump1090 <https://github.com/mutability/dump1090>`_ is a simple Mode S decoder
 for RTLSDR devices that is commonly used for tracking aircraft. Dump1090 makes
 a number of operating metrics available to track the performance of the tool
 and its environment.
@@ -14,9 +20,9 @@ later visualisation (e.g. using `Grafana <https://grafana.net/dashboards/768>`_)
 Install
 -------
 
-The dump1090 exporter is written using Python 3 (Python3.5+) and will not work 
-with Python 2. The dump1090 exporter is installed using the Python package 
-manager *pip*. The *pip3* alias typically links to the Python3 package manager 
+The dump1090 exporter is written using Python 3 (Python3.5+) and will not work
+with Python 2. The dump1090 exporter is installed using the Python package
+manager *pip*. The *pip3* alias typically links to the Python3 package manager
 so the install would look like this:
 
 .. code-block:: console

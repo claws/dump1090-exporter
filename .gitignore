@@ -91,3 +91,6 @@ ENV/
 tools/dev_venv
 .mypy_cache
 
+# VS Code
+.vscode/
+

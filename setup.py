@@ -2,30 +2,39 @@
 import os
 import re
 
-from pip.req import parse_requirements
-from pip.download import PipSession
 from setuptools import setup, find_packages
 
 
-install_reqs = parse_requirements("requirements.txt", session=PipSession())
-requires = [str(ir.req) for ir in install_reqs]
+regexp = re.compile(r".*__version__ = [\'\"](.*?)[\'\"]", re.S)
 
 
-def read_version():
-    regexp = re.compile(r"^__version__\W*=\W*['\"](\d\d\.\d\d\.\d+)['\"]")
-    init_file = os.path.join(
-        os.path.dirname(__file__), 'dump1090exporter', '__init__.py')
-    with open(init_file) as f:
-        for line in f:
-            match = regexp.match(line)
-            if match:
-                return match.group(1)
-        else:
-            raise RuntimeError(
-                'Cannot find __version__ in dump1090exporter/__init__.py')
+init_file = os.path.join(
+    os.path.dirname(__file__), "src", "dump1090exporter", "__init__.py"
+)
+with open(init_file, "r") as f:
+    module_content = f.read()
+    match = regexp.match(module_content)
+    if match:
+        version = match.group(1)
+    else:
+        raise RuntimeError("Cannot find __version__ in {}".format(init_file))
+
+with open("README.rst", "r") as f:
+    readme = f.read()
 
 
-version = read_version()
+def parse_requirements(filename):
+    """ Load requirements from a pip requirements file """
+    with open(filename, "r") as fd:
+        lines = []
+        for line in fd:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                lines.append(line)
+    return lines
+
+
+requirements = parse_requirements("requirements.txt")
 
 
 if __name__ == "__main__":
@@ -40,19 +49,19 @@ if __name__ == "__main__":
         license="MIT",
         keywords=["prometheus", "monitoring", "metrics", "dump1090", "ADSB"],
         url="https://github.com/claws/dump1090-exporter",
-        packages=find_packages(),
-        install_requires=requires,
+        package_dir={"": "src"},
+        packages=find_packages("src"),
+        install_requires=requirements,
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
             "Operating System :: OS Independent",
-            "Programming Language :: Python :: 3.5",
-            "Topic :: System :: Monitoring"],
+            "Programming Language :: Python :: 3.6",
+            "Topic :: System :: Monitoring",
+        ],
         entry_points={
-            'console_scripts': [
-                'dump1090exporter = dump1090exporter.__main__:main'
-            ]
+            "console_scripts": ["dump1090exporter = dump1090exporter.__main__:main"]
         },
     )

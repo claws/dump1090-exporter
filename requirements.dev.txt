@@ -1,5 +1,4 @@
 -r requirements.txt
-pycodestyle
-autopep8
+black
 mypy
 wheel

@@ -20,7 +20,7 @@ later visualisation (e.g. using `Grafana <https://grafana.net/dashboards/768>`_)
 Install
 -------
 
-The dump1090 exporter is written using Python 3 (Python3.5+) and will not work
+The dump1090 exporter is written using Python 3 (Python3.6+) and will not work
 with Python 2. The dump1090 exporter is installed using the Python package
 manager *pip*. The *pip3* alias typically links to the Python3 package manager
 so the install would look like this:
@@ -171,7 +171,7 @@ Docker
 The dump1090 exporter has been packaged into a Docker container, which
 can simplify running it in some environments. The container is configured
 with an entry point that runs the dump1090 exporter with *--help* as the
-default arguement.
+default argument.
 
 .. code-block:: console
 

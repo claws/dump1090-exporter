@@ -1,9 +1,7 @@
 # This makefile has been created to help developers perform common actions.
 # It assumes it is operating in an environment, such as a virtual env,
-# where the python command links to Python3 executable.
+# where the python command links to a Python3 executable.
 
-.PHONY: check_types clean clean.scrub docs dist help
-.PHONY: sdist style style.fix test test.verbose
 
 # Do not remove this block. It is used by the 'help' rule when
 # constructing the help output.
@@ -11,58 +9,61 @@
 # help: dump1090exporter Makefile help
 # help:
 
-STYLE_EXCLUDE_LIST:=git status --porcelain --ignored | grep "!!" | grep ".py$$" | cut -d " " -f2 | tr "\n" ","
-STYLE_MAX_LINE_LENGTH:=160
-STYLE_CMD:=pycodestyle --exclude=.git,docs,$(shell $(STYLE_EXCLUDE_LIST)) --ignore=E309,E402 --max-line-length=$(STYLE_MAX_LINE_LENGTH) dump1090exporter
+VENVS_DIR := $(HOME)/.venvs
+VENV_DIR := $(VENVS_DIR)/d1090exp
 
 # help: help                           - display this makefile's help information
+.PHONY: help
 help:
 	@grep "^# help\:" Makefile | grep -v grep | sed 's/\# help\: //' | sed 's/\# help\://'
 
 
+# help: venv                           - create a virtual environment for development
+.PHONY: venv
+venv:
+	@test -d "$(VENVS_DIR)" || mkdir -p "$(VENVS_DIR)"
+	@rm -Rf "$(VENV_DIR)"
+	@python3 -m venv "$(VENV_DIR)"
+	@/bin/bash -c "source $(VENV_DIR)/bin/activate && pip install pip --upgrade && pip install -r requirements.dev.txt"
+	@/bin/bash -c "source $(VENV_DIR)/bin/activate && pip install -e ."
+	@echo "Enter virtual environment using:\n\n\t$ source $(VENV_DIR)/bin/activate\n"
+
+
 # help: clean                          - clean all files using .gitignore rules
+.PHONY: clean
 clean:
 	@git clean -X -f -d
 
 
 # help: clean.scrub                    - clean all files, even untracked files
+.PHONY: clean.scrub
 clean.scrub:
 	git clean -x -f -d
 
 
 # help: test                           - run tests
+.PHONY: test
 test:
 	@python -m unittest discover -s tests
 
 
 # help: test.verbose                   - run tests [verbosely]
+.PHONY: test.verbose
 test.verbose:
 	@python -m unittest discover -s tests -v
 
 
-# help: style                          - perform pep8 check
+# help: style                          - perform code format compliance check
+.PHONY: style
 style:
-	@$(STYLE_CMD)
+	@black src/dump1090exporter
+	@black setup.py
 
 
-# help: style.fix                      - perform check with autopep8 fixes
-style.fix:
-	@# If there are no files to fix then autopep8 typically returns an error
-	@# because it did not get passed any files to work on. Use xargs -r to
-	@# avoid this problem.
-	@$(STYLE_CMD) -q  | xargs -r autopep8 -i --max-line-length=$(STYLE_MAX_LINE_LENGTH)
-
-
-# help: check_types                    - check type hint annotations
-check_types:
-	@MYPYPATH=$VIRTUAL_ENV/lib/python*/site-packages mypy -p dump1090exporter --ignore-missing-imports
-
-
-# help: docs                           - generate project documentation
-docs:
-	@cd docs; rm -rf api/dump1090exporter*.rst api/modules.rst _build/*
-	@cd docs; sphinx-apidoc -o ./api ../dump1090exporter
-	@cd docs; make html
+# help: check-types                    - check type hint annotations
+.PHONY: check-types
+check-types:
+	@cd src; MYPYPATH=$VIRTUAL_ENV/lib/python*/site-packages mypy -p dump1090exporter --ignore-missing-imports
 
 
 # help: dist                           - create a wheel distribution package

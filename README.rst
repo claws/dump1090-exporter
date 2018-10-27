@@ -192,3 +192,14 @@ line arguments to it:
       --latitude=-34.9285 \
       --longitude=138.6007
 
+
+Demonstration
+-------------
+
+A demonstration environment can be found in the ``demo`` directory. It uses
+Docker Compose the to orchestrate and link together containers running
+dump1090exporter, Prometheus and Grafana to facilitate experimentation with
+metric collection and graphing.
+
+This provides a really quick and easy method for checking out the
+dump1090exporter.

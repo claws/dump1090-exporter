@@ -1,0 +1,50 @@
+version: '3'
+
+volumes:
+  grafana_data: {}
+  prometheus_data: {}
+
+services:
+
+  dump1090exporter:
+    container_name: dump1090exporter
+    image: clawsicus/dump1090exporter
+    ports:
+      - "9105:9105"
+    restart: always
+    stop_signal: SIGINT
+    command: [
+      "--url=http://192.168.1.201:8080",
+      "--latitude=-34.9285",
+      "--longitude=138.6007"]
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    depends_on:
+      - dump1090exporter
+    volumes:
+      - ${PWD}/prometheus/:/etc/prometheus/
+      - ${PWD}/prometheus:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - 9090:9090
+    links:
+      - dump1090exporter:dump1090exporter
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    user: "104"
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - ${PWD}/grafana:/var/lib/grafana
+      - ${PWD}/grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    restart: always

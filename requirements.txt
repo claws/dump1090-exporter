@@ -1,2 +1,2 @@
 aiohttp
-aioprometheus
+aioprometheus[aiohttp]

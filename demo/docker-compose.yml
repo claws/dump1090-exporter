@@ -8,7 +8,7 @@ services:
 
   dump1090exporter:
     container_name: dump1090exporter
-    image: clawsicus/dump1090exporter
+    build: ${PWD}/..
     ports:
       - "9105:9105"
     restart: always
@@ -31,8 +31,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
     ports:
       - 9090:9090
-    links:
-      - dump1090exporter:dump1090exporter
     restart: always
 
   grafana:

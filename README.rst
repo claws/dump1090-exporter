@@ -21,23 +21,15 @@ Install
 -------
 
 The dump1090 exporter is written using Python 3 (Python3.6+) and will not work
-with Python 2. The dump1090 exporter is installed using the Python package
-manager *pip*. The *pip3* alias typically links to the Python3 package manager
-so the install would look like this:
+with Python 2. The dump1090 exporter can be installed using the Python package
+manager *pip*. It is recommended to use a virtual environment.
 
 .. code-block:: console
 
-    pip3 install dump1090exporter
+    $ pip install dump1090exporter
 
-If you are installing this package within a Python3 virtual environment then
-use:
-
-.. code-block:: console
-
-    pip install dump1090exporter
-
-The dump1090exporter is also available as a Docker container. See the *Docker*
-section below for more details.
+The dump1090exporter is also available as a Docker container from DockerHub.
+See the *Docker* section below for more details.
 
 
 Run
@@ -168,38 +160,147 @@ exporter can be visualised.
 Docker
 ------
 
-The dump1090 exporter has been packaged into a Docker container, which
-can simplify running it in some environments. The container is configured
-with an entry point that runs the dump1090 exporter with *--help* as the
-default argument.
+The dump1090 exporter has been packaged into a Docker container on DockerHub.
+This can simplify running it in some environments. The container is configured
+with an entry point that runs the dump1090 exporter application. The default
+command argument is *--help* which will display help information.
 
 .. code-block:: console
 
     $ docker run -it --rm clawsicus/dump1090exporter
-    usage: dump1090-exporter [-h] [--url <dump1090 url>]
+    usage: dump1090exporter [-h] [--url <dump1090 url>]
     ...
 
-To run the dump1090 exporter container simply pass the standard command
-line arguments to it:
+To run the dump1090 exporter container in your environment simply pass your
+own custom command line arguments to it:
 
 .. code-block:: console
 
     $ docker run -p 9105:9105 \
       --detach \
-      --restart always \
       clawsicus/dump1090exporter \
       --url=http://192.168.1.201:8080 \
       --latitude=-34.9285 \
       --longitude=138.6007
+
+Once running you can check the metrics being exposed to Prometheus by fetching
+them using curl.
+
+.. code-block:: console
+
+    $ curl http://127.0.0.1:9105/metrics
+
+Now you would configure your Prometheus server to scape the dump1090exporter
+container on port 9105.
 
 
 Demonstration
 -------------
 
 A demonstration environment can be found in the ``demo`` directory. It uses
-Docker Compose the to orchestrate and link together containers running
-dump1090exporter, Prometheus and Grafana to facilitate experimentation with
-metric collection and graphing.
+Docker Compose to orchestrate containers running dump1090exporter, Prometheus
+and Grafana to facilitate experimentation with metric collection and graphing.
 
 This provides a really quick and easy method for checking out the
 dump1090exporter.
+
+
+Developer Notes
+---------------
+
+Python Release Process
+^^^^^^^^^^^^^^^^^^^^^^
+
+The following steps are used to make a new software release:
+
+- Ensure that the version label in ``__init__.py`` is updated.
+
+- Create a virtual environment, install dependencies and the dump1090exporter.
+
+  .. code-block:: console
+
+      $ make venv
+      $ source venv/bin/activate
+      (d1090exp) $
+
+- Apply the code style formatter.
+
+  .. code-block:: console
+
+      (d1090exp) $ make style
+
+- Apply the code types checker.
+
+  .. code-block:: console
+
+      (d1090exp) $ make check-types
+
+- Create the distribution. This project produces an artefact called a pure
+  Python wheel. Only Python3 is supported by this package.
+
+  .. code-block:: console
+
+      (d1090exp) $ make dist
+
+- Upload the new release to PyPI.
+
+  .. code-block:: console
+
+      (d1090exp) $ make dist-upload
+
+- Create and push a repo tag to Github.
+
+  .. code-block:: console
+
+      $ git tag YY.MM.MICRO -m "A meaningful release tag comment"
+      $ git tag  # check release tag is in list
+      $ git push --tags origin master
+
+  - Github will create a release tarball at:
+
+    ::
+
+        https://github.com/{username}/{repo}/tarball/{tag}.tar.gz
+
+
+Docker Release Process
+^^^^^^^^^^^^^^^^^^^^^^
+
+The following steps are used to make a new software release:
+
+- Create a new dump1090exporter Python package.
+
+  .. code-block:: console
+
+      (d1090exp) $ make dist
+
+- Log in to the Docker user account which will hold the public image.
+
+  .. code-block:: console
+
+      (d1090exp) $ docker login
+      username
+      password
+
+- Create the dump1090exporter Docker container.
+
+  .. code-block:: console
+
+      (d1090exp) $ docker build -t clawsicus/dump1090exporter .
+
+- Test the new container by specifying its full namespace to pull
+  that image.
+
+  .. code-block:: console
+
+      $ docker run -it --rm clawsicus/dump1090exporter
+      usage: dump1090exporter [-h] [--url <dump1090 url>]
+      ...
+
+- Test it by connecting it to a dump1090 service.
+
+- Publish the new container to DockerHub using:
+
+  .. code-block:: console
+
+      (d1090exp) $ docker push clawsicus/dump1090exporter:<verison>

@@ -1,7 +1,10 @@
 # This makefile has been created to help developers perform common actions.
-# It assumes it is operating in an environment, such as a virtual env,
-# where the python command links to a Python3 executable.
+# Most rules assumes it is operating in a virtual environment where the python
+# command links to a Python3 executable.
 
+# Define the specific version of Python you want Make to use when creating
+# a virtual environment.
+PYTHON := python3.8
 
 # Do not remove this block. It is used by the 'help' rule when
 # constructing the help output.
@@ -9,75 +12,74 @@
 # help: dump1090exporter Makefile help
 # help:
 
-VENVS_DIR := $(HOME)/.venvs
-VENV_DIR := $(VENVS_DIR)/d1090exp
 
-# help: help                           - display this makefile's help information
+# help: help                  - display this makefile's help information
 .PHONY: help
 help:
 	@grep "^# help\:" Makefile | grep -v grep | sed 's/\# help\: //' | sed 's/\# help\://'
 
 
-# help: venv                           - create a virtual environment for development
+# help: venv                  - create a virtual environment for development
 .PHONY: venv
 venv:
-	@test -d "$(VENVS_DIR)" || mkdir -p "$(VENVS_DIR)"
-	@rm -Rf "$(VENV_DIR)"
-	@python3 -m venv "$(VENV_DIR)"
-	@/bin/bash -c "source $(VENV_DIR)/bin/activate && pip install pip --upgrade && pip install -r requirements.dev.txt"
-	@/bin/bash -c "source $(VENV_DIR)/bin/activate && pip install -e ."
-	@echo "Enter virtual environment using:\n\n\t$ source $(VENV_DIR)/bin/activate\n"
+	@rm -Rf venv
+	@$(PYTHON) -m venv venv --prompt d1090exp
+	@/bin/bash -c "source venv/bin/activate && pip install pip --upgrade && pip install -r requirements.dev.txt"
+	@/bin/bash -c "source venv/bin/activate && pip install -e ."
+	@echo "Enter virtual environment using:\n\n\t$ source venv/bin/activate\n"
 
 
-# help: clean                          - clean all files using .gitignore rules
+# help: clean                 - clean all files using .gitignore rules
 .PHONY: clean
 clean:
 	@git clean -X -f -d
 
 
-# help: clean.scrub                    - clean all files, even untracked files
-.PHONY: clean.scrub
-clean.scrub:
+# help: scrub                 - clean all files, even untracked files
+.PHONY: scrub
+scrub:
 	git clean -x -f -d
 
 
-# help: test                           - run tests
+# help: test                  - run tests
 .PHONY: test
 test:
 	@python -m unittest discover -s tests
 
 
-# help: test.verbose                   - run tests [verbosely]
-.PHONY: test.verbose
-test.verbose:
+# help: test-verbose          - run tests [verbosely]
+.PHONY: test-verbose
+test-verbose:
 	@python -m unittest discover -s tests -v
 
 
-# help: style                          - perform code format compliance check
+# help: check-style           - perform code format compliance check
+.PHONY: check-style
+check-style:
+	@black --check src/dump1090exporter setup.py
+
+
+# help: style                 - perform code style formatting
 .PHONY: style
 style:
-	@black src/dump1090exporter
-	@black setup.py
+	@black src/dump1090exporter setup.py
 
 
-# help: check-types                    - check type hint annotations
+# help: check-types           - check type hint annotations
 .PHONY: check-types
 check-types:
-	@cd src; MYPYPATH=$VIRTUAL_ENV/lib/python*/site-packages mypy -p dump1090exporter --ignore-missing-imports
+	@cd src; mypy -p dump1090exporter --ignore-missing-imports
 
 
-# help: dist                           - create a wheel distribution package
-dist: clean
+# help: dist                  - create a wheel distribution package
+.PHONY: dist
+dist:
 	@python setup.py bdist_wheel
 
 
-# help: dist.test                      - test a wheel distribution package
-dist.test: dist
-	@cd dist && ./test.bash ./dump1090exporter-*-py3-none-any.whl
-
-
-# help: dist.upload                     - upload a wheel distribution package
-dist.upload: dist
+# help: dist-upload           - upload a wheel distribution package
+.PHONY: dist-upload
+dist-upload: dist
 	@twine upload dist/dump1090exporter-*-py3-none-any.whl
 
 

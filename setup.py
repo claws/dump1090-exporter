@@ -33,9 +33,6 @@ def parse_requirements(filename):
     return lines
 
 
-requirements = parse_requirements("requirements.txt")
-
-
 if __name__ == "__main__":
 
     setup(
@@ -50,7 +47,11 @@ if __name__ == "__main__":
         url="https://github.com/claws/dump1090-exporter",
         package_dir={"": "src"},
         packages=find_packages("src"),
-        install_requires=requirements,
+        install_requires=parse_requirements("requirements.txt"),
+        extras_require={
+            "develop": parse_requirements("requirements.dev.txt"),
+            "uvloop": ["uvloop"],
+        },
         classifiers=[
             "Development Status :: 5 - Production/Stable",
             "Intended Audience :: Developers",

@@ -1,8 +1,15 @@
 import argparse
 import asyncio
 import logging
-
 from .exporter import Dump1090Exporter
+
+# try to import uvloop - optional
+try:
+    import uvloop
+
+    uvloop.install()
+except ImportError:
+    pass
 
 
 def main():
@@ -12,11 +19,11 @@ def main():
         prog="dump1090exporter", description="dump1090 Prometheus Exporter"
     )
     ARGS.add_argument(
-        "--url",
-        metavar="<dump1090 url>",
+        "--resource-path",
+        metavar="<dump1090 url or dirpath>",
         type=str,
         default="http://localhost:8080",
-        help="Url of the dump1090 service to be monitored",
+        help="dump1090 URL or directory path of the dump1090 service",
     )
     ARGS.add_argument(
         "--host",
@@ -77,7 +84,7 @@ def main():
 
     loop = asyncio.get_event_loop()
     mon = Dump1090Exporter(
-        url=args.url,
+        resource_path=args.resource_path,
         host=args.host,
         port=args.port,
         aircraft_interval=args.aircraft_interval,

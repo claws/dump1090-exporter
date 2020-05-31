@@ -50,7 +50,7 @@ Below is an example usage.
 .. code-block:: console
 
     $ dump1090exporter \
-      --url=http://192.168.1.201:8080 \
+      --resource-path=http://192.168.1.201:8080 \
       --port=9105 \
       --latitude=-34.9285 \
       --longitude=138.6007 \
@@ -67,15 +67,28 @@ origin (lat, lon). In this case it is for Adelaide, Australia. In most
 cases the dump1090 tool is not configured with the receivers position.
 By providing the exporter with the receiver location it can calculate
 ranges to aircraft. If the receiver position is already set within the
-dump1090 tool (and accessible from the *data/receivers.json* resource)
-then the exporter will use that data as the origin.
+dump1090 tool (and accessible from the *{resource-path}data/receivers.json*
+resource) then the exporter will use that data as the origin.
 
-The exporter fetches aircraft data (from *data/aircraft.json*) every 10
-seconds. This can be modified by specifying a new value with the
+The dump1090exporter can also monitor dump1090 status via the file system if
+you run it on the same machine. In this scenario you would pass a file system
+path to the ``--resource-path`` command line argument. For example:
+
+.. code-block:: console
+
+    $ dump1090exporter \
+      --resource-path=/path/to/dump1090-base-dir \
+      --port=9105 \
+      --latitude=-34.9285 \
+      --longitude=138.6007 \
+      --debug
+
+The exporter fetches aircraft data (from *{resource-path}/data/aircraft.json*)
+every 10 seconds. This can be modified by specifying a new value with the
 *--aircraft-interval* argument.
 
-The exporter fetches statistics data (from *data/stats.json*) every 60
-seconds, as the primary metrics being exported are extracted from the
+The exporter fetches statistics data (from *{resource-path}data/stats.json*)
+every 60 seconds, as the primary metrics being exported are extracted from the
 *last1min* time period. This too can be modified by specifying a new
 value with the *--stats-interval* argument.
 
@@ -168,7 +181,7 @@ command argument is *--help* which will display help information.
 .. code-block:: console
 
     $ docker run -it --rm clawsicus/dump1090exporter
-    usage: dump1090exporter [-h] [--url <dump1090 url>]
+    usage: dump1090exporter [-h] [--resource-path <dump1090 url>]
     ...
 
 To run the dump1090 exporter container in your environment simply pass your
@@ -179,7 +192,7 @@ own custom command line arguments to it:
     $ docker run -p 9105:9105 \
       --detach \
       clawsicus/dump1090exporter \
-      --url=http://192.168.1.201:8080 \
+      --resource-path=http://192.168.1.201:8080 \
       --latitude=-34.9285 \
       --longitude=138.6007
 
@@ -294,7 +307,7 @@ The following steps are used to make a new software release:
   .. code-block:: console
 
       $ docker run -it --rm clawsicus/dump1090exporter
-      usage: dump1090exporter [-h] [--url <dump1090 url>]
+      usage: dump1090exporter [-h] [--resource-path <dump1090 url>]
       ...
 
 - Test it by connecting it to a dump1090 service.

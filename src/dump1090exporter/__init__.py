@@ -1,3 +1,3 @@
 from .exporter import Dump1090Exporter
 
-__version__ = "18.7.1"
+__version__ = "20.0.0"

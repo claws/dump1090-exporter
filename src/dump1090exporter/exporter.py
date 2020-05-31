@@ -7,10 +7,9 @@ import aiohttp
 import asyncio
 import collections
 import datetime
+import json
 import logging
 import math
-import warnings
-
 from math import asin, cos, radians, sin, sqrt
 from aioprometheus import Service, Gauge
 
@@ -54,35 +53,15 @@ Dump1090Resources = collections.namedtuple(
 Position = collections.namedtuple("Position", ["latitude", "longitude"])
 
 
-def build_resources(base_url: str) -> Dump1090Resources:
-    """ Return a named tuple containing monitored dump1090 URLs """
+def build_resources(base: str) -> Dump1090Resources:
+    """ Return a named tuple containing dump1090 resource paths """
     resources = Dump1090Resources(
-        base_url,
-        f"{base_url}/data/receiver.json",
-        f"{base_url}/data/stats.json",
-        f"{base_url}/data/aircraft.json",
+        base,
+        f"{base}/data/receiver.json",
+        f"{base}/data/stats.json",
+        f"{base}/data/aircraft.json",
     )
     return resources
-
-
-async def fetch(
-    url: str,
-    session: aiohttp.ClientSession,
-    timeout: float = None,
-    loop: AbstractEventLoop = None,
-) -> Dict[Any, Any]:
-    """ Fetch JSON format data from a web resource and return a dict """
-    try:
-        logger.debug(f"fetching {url}")
-        async with session.get(url, timeout=timeout) as resp:
-            if not resp.status == 200:
-                raise Exception(f"Fetch failed {resp.status}: {url}")
-            data = await resp.json()
-            return data
-    except asyncio.TimeoutError:
-        raise Exception(f"Request timed out to {url}") from None
-    except aiohttp.ClientError as exc:
-        raise Exception(f"Client error {exc}, {url}") from None
 
 
 def haversine_distance(
@@ -124,7 +103,7 @@ class Dump1090Exporter(object):
 
     def __init__(
         self,
-        url: str,
+        resource_path: str,
         host: str = None,
         port: int = 9105,
         aircraft_interval: int = 10,
@@ -135,7 +114,8 @@ class Dump1090Exporter(object):
         loop: AbstractEventLoop = None,
     ) -> None:
         """
-        :param url: The base dump1090 web address.
+        :param resource_path: The base dump1090 resource address. This can be
+          a web address or a directory path.
         :param host: The host to expose Prometheus metrics on. Defaults
           to listen on all interfaces.
         :param port: The port to expose Prometheus metrics on. Defaults to
@@ -157,13 +137,10 @@ class Dump1090Exporter(object):
           from dump1090.
         :param loop: the event loop.
         """
-        self.dump1090urls = build_resources(url)
+        self.resources = build_resources(resource_path)
         self.loop = loop or asyncio.get_event_loop()
         self.host = host
         self.port = port
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.session = aiohttp.ClientSession(loop=self.loop)
         self.aircraft_interval = datetime.timedelta(seconds=aircraft_interval)
         self.stats_interval = datetime.timedelta(seconds=stats_interval)
         self.stats_time_periods = time_periods
@@ -173,7 +150,7 @@ class Dump1090Exporter(object):
         self.stats_task = None  # type: Union[asyncio.Task, None]
         self.aircraft_task = None  # type: Union[asyncio.Task, None]
         self.initialise_metrics()
-        logger.info(f"Monitoring dump1090 at url: {self.dump1090urls.base}")
+        logger.info(f"Monitoring dump1090 resources at: {self.resources.base}")
         logger.info(
             f"Refresh rates: aircraft={self.aircraft_interval}, statstics={self.stats_interval}"
         )
@@ -188,9 +165,7 @@ class Dump1090Exporter(object):
         # the dump1090 receiver data. If present this data will override
         # command line configuration.
         try:
-            receiver = await fetch(
-                self.dump1090urls.receiver, self.session, timeout=self.fetch_timeout
-            )
+            receiver = await self._fetch(self.resources.receiver)
             if receiver:
                 if "lat" in receiver and "lon" in receiver:
                     self.origin = Position(receiver["lat"], receiver["lon"])
@@ -207,7 +182,6 @@ class Dump1090Exporter(object):
 
     async def stop(self) -> None:
         """ Stop the monitor """
-        await self.session.close()
 
         if self.stats_task:
             self.stats_task.cancel()
@@ -258,6 +232,28 @@ class Dump1090Exporter(object):
         self.svr.register(gauge)
         return gauge
 
+    async def _fetch(self, resource: str,) -> Dict[Any, Any]:
+        """ Fetch JSON data from a web or file resource and return a dict """
+        logger.debug(f"fetching {resource}")
+        if resource.startswith("http"):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        resource, timeout=self.fetch_timeout
+                    ) as resp:
+                        if not resp.status == 200:
+                            raise Exception(f"Fetch failed {resp.status}: {resource}")
+                        data = await resp.json()
+            except asyncio.TimeoutError:
+                raise Exception(f"Request timed out to {resource}") from None
+            except aiohttp.ClientError as exc:
+                raise Exception(f"Client error {exc}, {resource}") from None
+        else:
+            with open(resource, "rt") as f:
+                data = json.loads(f.read())
+
+        return data
+
     async def updater_stats(self) -> None:
         """
         This long running coroutine task is responsible for fetching current
@@ -266,9 +262,7 @@ class Dump1090Exporter(object):
         while True:
             start = datetime.datetime.now()
             try:
-                stats = await fetch(
-                    self.dump1090urls.stats, self.session, timeout=self.fetch_timeout
-                )
+                stats = await self._fetch(self.resources.stats)
                 self.process_stats(stats, time_periods=self.stats_time_periods)
             except Exception as exc:
                 logger.error(f"Error fetching dump1090 stats data: {exc}")
@@ -286,9 +280,7 @@ class Dump1090Exporter(object):
         while True:
             start = datetime.datetime.now()
             try:
-                aircraft = await fetch(
-                    self.dump1090urls.aircraft, self.session, timeout=self.fetch_timeout
-                )
+                aircraft = await self._fetch(self.resources.aircraft)
                 self.process_aircraft(aircraft)
             except Exception as exc:
                 logger.error(f"Error fetching dump1090 aircraft data: {exc}")

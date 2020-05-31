@@ -15,7 +15,7 @@ instance:
 
 ``` yaml
 command: [
-  "--url=http://192.168.1.201:8080",
+  "--resource-path=http://192.168.1.201:8080",
   "--latitude=-34.9285",
   "--longitude=138.6007"]
 ```

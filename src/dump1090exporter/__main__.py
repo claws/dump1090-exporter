@@ -1,4 +1,3 @@
-
 import argparse
 import asyncio
 import logging
@@ -9,7 +8,9 @@ from .exporter import Dump1090Exporter
 def main():
     """ Run the dump1090 Prometheus exporter """
 
-    ARGS = argparse.ArgumentParser(description="dump1090 Prometheus Exporter")
+    ARGS = argparse.ArgumentParser(
+        prog="dump1090exporter", description="dump1090 Prometheus Exporter"
+    )
     ARGS.add_argument(
         "--url",
         metavar="<dump1090 url>",
@@ -82,7 +83,6 @@ def main():
         aircraft_interval=args.aircraft_interval,
         stats_interval=args.stats_interval,
         origin=args.origin,
-        loop=loop,
     )
     loop.run_until_complete(mon.start())
     try:

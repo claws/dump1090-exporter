@@ -57,9 +57,9 @@ def build_resources(base: str) -> Dump1090Resources:
     """ Return a named tuple containing dump1090 resource paths """
     resources = Dump1090Resources(
         base,
-        f"{base}/data/receiver.json",
-        f"{base}/data/stats.json",
-        f"{base}/data/aircraft.json",
+        f"{base}/receiver.json",
+        f"{base}/stats.json",
+        f"{base}/aircraft.json",
     )
     return resources
 

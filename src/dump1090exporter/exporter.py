@@ -3,21 +3,21 @@ This script collects data from a dump1090 service and exposes them to the
 Prometheus.io monitoring server for aggregation and later visualisation.
 """
 
-import aiohttp
 import asyncio
 import collections
 import datetime
 import json
 import logging
 import math
+from asyncio.events import AbstractEventLoop
 from math import asin, cos, radians, sin, sqrt
-from aioprometheus import Service, Gauge
+
+from typing import Any, Awaitable, Dict, Sequence, Tuple, Union
+
+import aiohttp
+from aioprometheus import Gauge, Service
 
 from .metrics import Specs
-
-# type annotations
-from typing import Any, Awaitable, Dict, Sequence, Tuple, Union
-from asyncio.events import AbstractEventLoop
 
 PositionType = Tuple[float, float]
 MetricSpecItemType = Tuple[str, str, str]
@@ -202,7 +202,7 @@ class Dump1090Exporter(object):
         await self.svr.stop()
 
     def initialise_metrics(self) -> None:
-        """ Create metrics
+        """Create metrics
 
         This method initialises a dict as the metrics attribute.
 
@@ -232,7 +232,10 @@ class Dump1090Exporter(object):
         self.svr.register(gauge)
         return gauge
 
-    async def _fetch(self, resource: str,) -> Dict[Any, Any]:
+    async def _fetch(
+        self,
+        resource: str,
+    ) -> Dict[Any, Any]:
         """ Fetch JSON data from a web or file resource and return a dict """
         logger.debug(f"fetching {resource}")
         if resource.startswith("http"):
@@ -293,7 +296,7 @@ class Dump1090Exporter(object):
     def process_stats(
         self, stats: dict, time_periods: Sequence[str] = ("last1min",)
     ) -> None:
-        """ Process dump1090 statistics into exported metrics.
+        """Process dump1090 statistics into exported metrics.
 
         :param stats: a dict containing dump1090 statistics data.
         """
@@ -328,7 +331,7 @@ class Dump1090Exporter(object):
                     metric.set(labels, value)
 
     def process_aircraft(self, aircraft: dict, threshold: int = 15) -> None:
-        """ Process aircraft statistics into exported metrics.
+        """Process aircraft statistics into exported metrics.
 
         :param aircraft: a dict containing aircraft data.
         :param threshold: only let aircraft seen within this threshold to

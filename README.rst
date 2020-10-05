@@ -52,7 +52,7 @@ Below is an example usage.
 .. code-block:: console
 
     $ dump1090exporter \
-      --resource-path=http://192.168.1.201:8080 \
+      --resource-path=http://192.168.1.201:8080/data \
       --port=9105 \
       --latitude=-34.9285 \
       --longitude=138.6007 \
@@ -194,7 +194,7 @@ own custom command line arguments to it:
     $ docker run -p 9105:9105 \
       --detach \
       clawsicus/dump1090exporter \
-      --resource-path=http://192.168.1.201:8080 \
+      --resource-path=http://192.168.1.201:8080/data \
       --latitude=-34.9285 \
       --longitude=138.6007
 
@@ -312,7 +312,24 @@ The following steps are used to make a new software release:
       usage: dump1090exporter [-h] [--resource-path <dump1090 url>]
       ...
 
-- Test it by connecting it to a dump1090 service.
+- Test it by running the container and configuring it to connect to a
+  dump1090 service.
+
+  .. code-block:: console
+
+      $ docker run -p 9105:9105 \
+        --detach \
+        clawsicus/dump1090exporter \
+        --resource-path=http://192.168.1.201:8080/data \
+        --latitude=-34.9285 \
+        --longitude=138.6007
+
+  Confirm that metrics are being collected and exposed by checking metrics
+  are being exposed to Prometheus by fetching them using curl.
+
+  .. code-block:: console
+
+      $ curl http://127.0.0.1:9105/metrics
 
 - Publish the new container to DockerHub using:
 

@@ -10,7 +10,7 @@ import json
 import logging
 import math
 from asyncio.events import AbstractEventLoop
-from math import asin, cos, radians, sin, sqrt
+from math import asin, cos, radians, sin, sqrt, atan, degrees
 
 from typing import Any, Awaitable, Dict, Sequence, Tuple, Union
 
@@ -44,6 +44,8 @@ AircraftKeys = (
     "tisb",
     "track",
     "vert_rate",
+    "rel_angle",
+    "rel_direction",
 )
 
 Dump1090Resources = collections.namedtuple(
@@ -63,6 +65,69 @@ def build_resources(base: str) -> Dump1090Resources:
     )
     return resources
 
+def relative_angle(
+    pos1: Position, pos2: Position
+) -> float:
+    """
+    Calculate the direction pos2 relative to pos1. Returns angle in degrees
+
+    :param pos1: a Position tuple defining (lat, lon) of origin in decimal degrees
+    :param pos2: a Position tuple defining (lat, lon) of target in decimal degrees
+
+    :returns: angle in degrees
+    :rtype: float
+    """
+    lat1, lon1, lat2, lon2 = [x for x in (*pos1, *pos2)]
+
+    deg = degrees(atan((lon2-lon1)/(lat2-lat1)))
+
+    """
+    Special case - same lat as origin: 90 degs or 270 degs
+
+       |
+    -x-o-x-
+       |
+    """
+    if lat2 == lat1:
+        if lon2 > lon1:
+            return 90
+        else:
+            return 270
+
+    """
+    Sign of results from the calculation above
+
+     - | +  (lat2>lat1)
+    ---o---
+     + | -  (lat2<lat1)
+
+    conversion needed to express in terms of 360 degs
+    """
+    if lat2 > lat1:
+        return (360+deg) % 360
+    else:
+        return 180+deg
+
+# lookup table for directions - each step is 22.5 degrees
+direction_lut = (
+    "N",
+    "NE", "NE",
+    "E", "E",
+    "SE", "SE",
+    "S", "S",
+    "SW", "SW",
+    "W", "W",
+    "NW", "NW",
+    "N"
+)
+
+def relative_direction(
+    angle: float
+) -> str:
+    """
+    Convert relative angle in degrees into direction (N/NE/E/SE/S/SW/W/NW)
+    """
+    return direction_lut[int(angle/22.5)]
 
 def haversine_distance(
     pos1: Position, pos2: Position, radius: float = 6371.0e3
@@ -353,6 +418,8 @@ class Dump1090Exporter(object):
         aircraft_with_pos = 0
         aircraft_with_mlat = 0
         aircraft_max_range = 0.0
+        aircraft_direction = {"N": 0, "NE": 0, "E": 0, "SE": 0, "S": 0, "SW": 0, "W": 0, "NW": 0}
+        aircraft_direction_max_range = {"N": 0.0, "NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0, "SW": 0.0, "W": 0.0, "NW": 0.0}
         # Filter aircraft to only those that have been seen within the
         # last n seconds to minimise contributions from aged obsevations.
         for a in aircraft["aircraft"]:
@@ -366,6 +433,13 @@ class Dump1090Exporter(object):
                     )
                     if distance > aircraft_max_range:
                         aircraft_max_range = distance
+
+                    a["rel_angle"] = relative_angle(self.origin, Position(a["lat"], a["lon"]))
+                    a["rel_direction"] = relative_direction(a["rel_angle"])
+                    aircraft_direction[a["rel_direction"]] += 1
+                    if distance > aircraft_direction_max_range[a["rel_direction"]]:
+                        aircraft_direction_max_range[a["rel_direction"]] = distance
+
                 if a["mlat"] and "lat" in a["mlat"]:
                     aircraft_with_mlat += 1
 
@@ -377,6 +451,11 @@ class Dump1090Exporter(object):
         d["observed_with_mlat"].set(labels, aircraft_with_mlat)
         d["max_range"].set(labels, aircraft_max_range)
         d["messages_total"].set(labels, messages)
+
+        for dir in aircraft_direction:
+            labels = dict(time_period="latest", direction=dir)
+            d["observed_with_direction"].set(labels, aircraft_direction[dir])
+            d["max_range_by_direction"].set(labels, aircraft_direction_max_range[dir])
 
         logger.debug(
             f"aircraft: observed={aircraft_observed}, "

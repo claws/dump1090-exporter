@@ -79,8 +79,6 @@ def relative_angle(
     """
     lat1, lon1, lat2, lon2 = [x for x in (*pos1, *pos2)]
 
-    deg = degrees(atan((lon2-lon1)/(lat2-lat1)))
-
     """
     Special case - same lat as origin: 90 degs or 270 degs
 
@@ -93,6 +91,8 @@ def relative_angle(
             return 90
         else:
             return 270
+
+    deg = degrees(atan((lon2-lon1)/(lat2-lat1)))
 
     """
     Sign of results from the calculation above

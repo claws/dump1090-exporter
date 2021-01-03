@@ -58,7 +58,8 @@
   "editable": true,
   "gnetId": 768,
   "graphTooltip": 0,
-  "id": null,
+  "id": 13,
+  "iteration": 1609610953209,
   "links": [],
   "panels": [
     {
@@ -127,8 +128,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "metric": "dump1090_recent_",
@@ -216,8 +218,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "metric": "dump1090_recent_",
@@ -306,8 +309,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "dump1090_recent_aircraft_max_range{job=\"dump1090\"}",
+          "expr": "sum(dump1090_recent_aircraft_max_range{job=\"dump1090\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "metric": "dump1090_aircraft_recent_max_range",
@@ -395,8 +399,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\"}[1m])",
+          "expr": "sum(rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\"}[1m]))",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "metric": "dump1090_aircraft_recent_max_range",
@@ -484,7 +489,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "max(dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"})",
           "format": "time_series",
           "interval": "1s",
           "intervalFactor": 1,
@@ -575,8 +580,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "avg(dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "metric": "dump1090_aircraft_recent_max_range",
@@ -607,6 +613,7 @@
       "editable": true,
       "error": false,
       "fill": 0,
+      "fillGradient": 0,
       "grid": {},
       "gridPos": {
         "h": 7,
@@ -614,6 +621,7 @@
         "x": 0,
         "y": 3
       },
+      "hiddenSeries": false,
       "id": 3,
       "interval": "5s",
       "isNew": true,
@@ -630,6 +638,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -640,41 +651,46 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "total",
+          "legendFormat": "total ($instance)",
           "metric": "recent_aircraft_observed",
           "refId": "A",
           "step": 10
         },
         {
-          "expr": "dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "W/ position",
+          "legendFormat": "w/ position ($instance)",
           "refId": "C",
           "step": 10
         },
         {
-          "expr": "dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"} - dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"} - dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "Wo/ position",
+          "legendFormat": "w/o position ($instance)",
           "refId": "D",
           "step": 10
         },
         {
-          "expr": "dump1090_recent_aircraft_with_multilateration{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "sum(dump1090_recent_aircraft_with_multilateration{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "mlat",
+          "legendFormat": "mlat ($instance)",
           "refId": "B",
           "step": 10
         }
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Aircraft",
       "tooltip": {
@@ -683,7 +699,6 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": false,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -717,6 +732,7 @@
     },
     {
       "content": "#### Aircraft\nThis graph displays the counts of aircraft (e.g unique ICAO) being reported. Aircraft are grouped into total aircraft being reported, aircraft reported with a position, aircraft reported without a position and aircraft reported that have multi-lateration reports.",
+      "datasource": null,
       "editable": true,
       "error": false,
       "gridPos": {
@@ -741,6 +757,7 @@
       "editable": true,
       "error": false,
       "fill": 0,
+      "fillGradient": 0,
       "grid": {},
       "gridPos": {
         "h": 7,
@@ -748,6 +765,7 @@
         "x": 0,
         "y": 10
       },
+      "hiddenSeries": false,
       "id": 1,
       "interval": "5s",
       "isNew": true,
@@ -758,7 +776,7 @@
         "max": false,
         "min": false,
         "rightSide": false,
-        "show": false,
+        "show": true,
         "total": false,
         "values": false
       },
@@ -766,6 +784,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -776,11 +797,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "dump1090_recent_aircraft_max_range{job=\"dump1090\", time_period=\"latest\"}",
+          "expr": "max(dump1090_recent_aircraft_max_range{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ time_period }}",
+          "legendFormat": "{{ time_period }} ($instance)",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -788,6 +810,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Maximum Range",
       "tooltip": {
@@ -796,7 +819,6 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": false,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -830,6 +852,7 @@
     },
     {
       "content": "##### Maximum Range\nThis graph displays the maximum range of the currently observed aircraft reporting a position.",
+      "datasource": null,
       "editable": true,
       "error": false,
       "gridPos": {
@@ -854,6 +877,7 @@
       "editable": true,
       "error": false,
       "fill": 0,
+      "fillGradient": 0,
       "grid": {},
       "gridPos": {
         "h": 7,
@@ -861,6 +885,7 @@
         "x": 0,
         "y": 17
       },
+      "hiddenSeries": false,
       "id": 8,
       "interval": "5s",
       "isNew": true,
@@ -877,6 +902,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -887,25 +915,19 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\"}[1m])",
+          "expr": "sum(rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"}[1m]))",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "latest",
+          "legendFormat": "latest ($instance)",
           "metric": "dump1090_messages_total",
           "refId": "A",
-          "step": 10
-        },
-        {
-          "expr": "dump1090_stats_messages_total{job=\"dump1090\", time_period=\"last1min\"} / 60",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "last1min",
-          "refId": "B",
           "step": 10
         }
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "messages / sec",
       "tooltip": {
@@ -914,7 +936,6 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": false,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -948,6 +969,7 @@
     },
     {
       "content": "##### Messages\nThis graph displays the messages received per second.",
+      "datasource": null,
       "editable": true,
       "error": false,
       "gridPos": {
@@ -972,6 +994,7 @@
       "editable": true,
       "error": false,
       "fill": 0,
+      "fillGradient": 0,
       "grid": {},
       "gridPos": {
         "h": 7,
@@ -979,6 +1002,7 @@
         "x": 0,
         "y": 24
       },
+      "hiddenSeries": false,
       "id": 5,
       "interval": "5s",
       "isNew": true,
@@ -997,6 +1021,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1009,8 +1036,9 @@
         {
           "expr": "dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "mean",
+          "legendFormat": "mean ({{instance}})",
           "metric": "dump1090_stats_local_signal_strength_dbFS",
           "refId": "A",
           "step": 10
@@ -1018,8 +1046,9 @@
         {
           "expr": "dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "peak",
+          "legendFormat": "peak ({{instance}})",
           "metric": "dump1090_stats_local_peak_signal_strength_dbFS",
           "refId": "B",
           "step": 10
@@ -1027,8 +1056,9 @@
         {
           "expr": "dump1090_stats_local_noise_level_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "noise",
+          "legendFormat": "noise ({{instance}})",
           "metric": "dump1090_stats_local_noise_level_dbFS",
           "refId": "C",
           "step": 10
@@ -1044,6 +1074,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Signal Strength",
       "tooltip": {
@@ -1052,7 +1083,6 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": false,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1086,6 +1116,7 @@
     },
     {
       "content": "##### Signal Strength\nThis graph displays the signal levels reported for noise, mean and peak signal levels. The values are reported in [dbFS](https://en.wikipedia.org/wiki/DBFS).",
+      "datasource": null,
       "editable": true,
       "error": false,
       "gridPos": {
@@ -1110,6 +1141,7 @@
       "editable": true,
       "error": false,
       "fill": 0,
+      "fillGradient": 0,
       "grid": {},
       "gridPos": {
         "h": 7,
@@ -1117,6 +1149,7 @@
         "x": 0,
         "y": 31
       },
+      "hiddenSeries": false,
       "id": 7,
       "interval": "5s",
       "isNew": true,
@@ -1133,6 +1166,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1145,8 +1181,9 @@
         {
           "expr": "dump1090_stats_cpu_demod_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "demod",
+          "legendFormat": "demod ({{instance}})",
           "metric": "",
           "refId": "B",
           "step": 10
@@ -1154,8 +1191,9 @@
         {
           "expr": "dump1090_stats_cpu_reader_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "usb",
+          "legendFormat": "usb ({{instance}})",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -1163,8 +1201,9 @@
         {
           "expr": "dump1090_stats_cpu_background_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "other",
+          "legendFormat": "other ({{instance}})",
           "metric": "",
           "refId": "C",
           "step": 10
@@ -1172,6 +1211,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Utilisation",
       "tooltip": {
@@ -1213,6 +1253,7 @@
     },
     {
       "content": "##### CPU Utilisation\nThis graph displays how much CPU time is used by the dump1090 tool. demod reports the time spent demodulating and decoding data from the USB SDR dongle. usb reports time spent reading sample data from the USB SDR dongle. other reports time spent doing network I/O, processing network messages, and periodic tasks.\n",
+      "datasource": null,
       "editable": true,
       "error": false,
       "gridPos": {
@@ -1227,17 +1268,1006 @@
       "mode": "markdown",
       "title": "",
       "type": "text"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 45,
+      "panels": [],
+      "title": "Receiver Performance by Direction",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 39
+      },
+      "hiddenSeries": false,
+      "id": 25,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"NW\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"NW\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "NW",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 39
+      },
+      "hiddenSeries": false,
+      "id": 35,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"N\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"N\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "N",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 39
+      },
+      "hiddenSeries": false,
+      "id": 36,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"NE\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"NE\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "NE",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 44
+      },
+      "hiddenSeries": false,
+      "id": 37,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"W\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"W\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "W",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "columns": [
+        {
+          "text": "Avg",
+          "value": "avg"
+        },
+        {
+          "text": "Max",
+          "value": "max"
+        }
+      ],
+      "datasource": null,
+      "fontSize": "80%",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 44
+      },
+      "id": 32,
+      "pageSize": null,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": false
+      },
+      "styles": [
+        {
+          "alias": "Direction",
+          "align": "auto",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "mappingType": 2,
+          "pattern": "Metric",
+          "preserveFormat": false,
+          "type": "string"
+        },
+        {
+          "alias": "",
+          "align": "right",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "number",
+          "unit": "lengthm"
+        }
+      ],
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_max_range_by_direction{time_period=\"latest\", instance=~\"^$instance$\"}",
+          "interval": "",
+          "legendFormat": "{{instance}}: {{direction}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Range",
+      "transform": "timeseries_aggregations",
+      "type": "table"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 44
+      },
+      "hiddenSeries": false,
+      "id": 38,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"E\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"E\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "E",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 49
+      },
+      "hiddenSeries": false,
+      "id": 39,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"SW\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"SW\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "SW",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 49
+      },
+      "hiddenSeries": false,
+      "id": 40,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"S\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"S\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "S",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 49
+      },
+      "hiddenSeries": false,
+      "id": 41,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.7.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/Range/",
+          "bars": false,
+          "lines": true,
+          "stack": false,
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "dump1090_recent_aircraft_with_direction{instance=~\"^$instance$\", direction=\"SE\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "Aircrafts Seen ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(dump1090_recent_aircraft_max_range_by_direction{instance=~\"^$instance$\", direction=\"SE\"}[60m])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "1h Avg Range ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "SE",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": false,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "lengthm",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 16,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(dump1090_messages_total, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "index": -1,
+        "label": null,
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": "label_values(dump1090_messages_total, instance)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -1268,5 +2298,8 @@
   "timezone": "browser",
   "title": "dump1090exporter",
   "uid": "jYDJZoviz",
-  "version": 2
+  "variables": {
+    "list": []
+  },
+  "version": 3
 }

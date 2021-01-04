@@ -173,6 +173,8 @@ class Dump1090Exporter(object):
         port: int = 9105,
         aircraft_interval: int = 10,
         stats_interval: int = 60,
+        receiver_interval: int = 10,
+        receiver_interval_origin_ok: int = 300,
         time_periods: Sequence[str] = ("last1min",),
         origin: PositionType = None,
         fetch_timeout: float = 2.0,
@@ -185,6 +187,12 @@ class Dump1090Exporter(object):
           to listen on all interfaces.
         :param port: The port to expose Prometheus metrics on. Defaults to
           port 9105.
+        :param receiver_interval: number of seconds between probing the
+          dump1090 receiver config if an origin is not yet set. Defaults to
+          10 seconds.
+        :param receiver_interval_origin_ok: number of seconds between probing
+          dump1090 receiver config if an origin is already set. Defaults to
+          300 seconds.
         :param aircraft_interval: number of seconds between processing the
           dump1090 aircraft data. Defaults to 10 seconds.
         :param stats_interval: number of seconds between processing the
@@ -206,12 +214,15 @@ class Dump1090Exporter(object):
         self.loop = loop or asyncio.get_event_loop()
         self.host = host
         self.port = port
+        self.receiver_interval = datetime.timedelta(seconds=receiver_interval)
+        self.receiver_interval_origin_ok = datetime.timedelta(seconds=receiver_interval_origin_ok)
         self.aircraft_interval = datetime.timedelta(seconds=aircraft_interval)
         self.stats_interval = datetime.timedelta(seconds=stats_interval)
         self.stats_time_periods = time_periods
         self.origin = Position(*origin) if origin else None
         self.fetch_timeout = fetch_timeout
         self.svr = Service()
+        self.receiver_task = None  # type: Union[asyncio.Task, None]
         self.stats_task = None  # type: Union[asyncio.Task, None]
         self.aircraft_task = None  # type: Union[asyncio.Task, None]
         self.initialise_metrics()
@@ -226,27 +237,22 @@ class Dump1090Exporter(object):
         await self.svr.start(addr=self.host, port=self.port)
         logger.info(f"serving dump1090 prometheus metrics on: {self.svr.metrics_url}")
 
-        # Attempt to retrieve the optional lat and lon position from
-        # the dump1090 receiver data. If present this data will override
-        # command line configuration.
-        try:
-            receiver = await self._fetch(self.resources.receiver)
-            if receiver:
-                if "lat" in receiver and "lon" in receiver:
-                    self.origin = Position(receiver["lat"], receiver["lon"])
-                    logger.info(
-                        f"Origin successfully extracted from receiver data: {self.origin}"
-                    )
-        except Exception as exc:
-            logger.error(f"Error fetching dump1090 receiver data: {exc}")
-
         # fmt: off
+        self.receiver_task = asyncio.ensure_future(self.updater_receiver())  # type: ignore
         self.stats_task = asyncio.ensure_future(self.updater_stats())  # type: ignore
         self.aircraft_task = asyncio.ensure_future(self.updater_aircraft())  # type: ignore
         # fmt: on
 
     async def stop(self) -> None:
         """ Stop the monitor """
+
+        if self.receiver_task:
+            self.receiver_task.cancel()
+            try:
+                await self.receiver_task
+            except asyncio.CancelledError:
+                pass
+            self.receiver_task = None
 
         if self.stats_task:
             self.stats_task.cancel()
@@ -321,6 +327,33 @@ class Dump1090Exporter(object):
                 data = json.loads(f.read())
 
         return data
+
+    async def updater_receiver(self) -> None:
+        """
+        This long running coroutine task is responsible for fetching current
+        dump1090 receiver configuration such as the lat/lon and updating
+        internal config
+        """
+        while True:
+            start = datetime.datetime.now()
+            try:
+                receiver = await self._fetch(self.resources.receiver)
+                if receiver:
+                    if "lat" in receiver and "lon" in receiver:
+                        self.origin = Position(receiver["lat"], receiver["lon"])
+                        logger.info(
+                            f"Origin successfully extracted from receiver data: {self.origin}"
+                        )
+            except Exception as exc:
+                logger.error(f"Error fetching dump1090 receiver data: {exc}")
+
+            # wait until next collection time
+            end = datetime.datetime.now()
+            if self.origin:
+                wait_seconds = (start + self.receiver_interval_origin_ok - end).total_seconds()
+            else:
+                wait_seconds = (start + self.receiver_interval - end).total_seconds()
+            await asyncio.sleep(wait_seconds)
 
     async def updater_stats(self) -> None:
         """

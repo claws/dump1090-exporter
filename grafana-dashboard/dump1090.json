@@ -128,7 +128,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\"})",
+          "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -218,7 +218,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\"})",
+          "expr": "sum(dump1090_recent_aircraft_with_position{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -309,8 +309,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(dump1090_recent_aircraft_max_range{job=\"dump1090\"})",
+          "expr": "max(dump1090_recent_aircraft_max_range{job=\"dump1090\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "instant": false,
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
@@ -399,7 +400,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\"}[1m]))",
+          "expr": "sum(rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -489,7 +490,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"})",
+          "expr": "max(dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"})",
           "format": "time_series",
           "interval": "1s",
           "intervalFactor": 1,
@@ -580,7 +581,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "avg(dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"})",
+          "expr": "avg(dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -606,7 +607,7 @@
     },
     {
       "aliasColors": {},
-      "bars": false,
+      "bars": true,
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
@@ -634,7 +635,7 @@
         "total": false,
         "values": false
       },
-      "lines": true,
+      "lines": false,
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
@@ -647,12 +648,13 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(dump1090_recent_aircraft_observed{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
           "format": "time_series",
+          "hide": true,
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "total ($instance)",
@@ -697,7 +699,7 @@
         "msResolution": true,
         "shared": true,
         "sort": 0,
-        "value_type": "cumulative"
+        "value_type": "individual"
       },
       "type": "graph",
       "xaxis": {
@@ -709,6 +711,7 @@
       },
       "yaxes": [
         {
+          "decimals": 0,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -797,12 +800,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(dump1090_recent_aircraft_max_range{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"})",
+          "expr": "dump1090_recent_aircraft_max_range{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ time_period }} ($instance)",
+          "legendFormat": "{{ time_period }} ({{instance}})",
           "metric": "",
           "refId": "A",
           "step": 10
@@ -870,13 +873,13 @@
     },
     {
       "aliasColors": {},
-      "bars": false,
+      "bars": true,
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "fillGradient": 0,
       "grid": {},
       "gridPos": {
@@ -898,7 +901,7 @@
         "total": false,
         "values": false
       },
-      "lines": true,
+      "lines": false,
       "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
@@ -909,20 +912,54 @@
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
-      "seriesOverrides": [],
+      "seriesOverrides": [
+        {
+          "alias": "/^accept/",
+          "bars": false,
+          "lines": true,
+          "linewidth": 3,
+          "stack": "C",
+          "yaxis": 2,
+          "zindex": 3
+        },
+        {
+          "alias": "/^bad/",
+          "bars": false,
+          "dashLength": 4,
+          "dashes": true,
+          "fill": 2,
+          "lines": true,
+          "stack": "C",
+          "yaxis": 2,
+          "zindex": 3
+        }
+      ],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"}[1m]))",
+          "expr": "rate(dump1090_messages_total{job=\"dump1090\", time_period=\"latest\", instance=~\"^$instance$\"}[1m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "latest ($instance)",
+          "legendFormat": "total ({{instance}})",
           "metric": "dump1090_messages_total",
           "refId": "A",
           "step": 10
+        },
+        {
+          "expr": "dump1090_stats_local_accepted{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}/60",
+          "hide": true,
+          "interval": "",
+          "legendFormat": "accepted ({{instance}})",
+          "refId": "B"
+        },
+        {
+          "expr": "dump1090_stats_local_bad{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}/60",
+          "interval": "",
+          "legendFormat": "bad ({{instance}})",
+          "refId": "C"
         }
       ],
       "thresholds": [],
@@ -934,7 +971,7 @@
         "msResolution": true,
         "shared": true,
         "sort": 0,
-        "value_type": "cumulative"
+        "value_type": "individual"
       },
       "type": "graph",
       "xaxis": {
@@ -1034,7 +1071,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_local_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1044,7 +1081,7 @@
           "step": 10
         },
         {
-          "expr": "dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_local_peak_signal_strength_dbFS{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1054,7 +1091,7 @@
           "step": 10
         },
         {
-          "expr": "dump1090_stats_local_noise_level_dbFS{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_local_noise_level_dbFS{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1179,7 +1216,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "dump1090_stats_cpu_demod_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_cpu_demod_milliseconds{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1189,7 +1226,7 @@
           "step": 10
         },
         {
-          "expr": "dump1090_stats_cpu_reader_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_cpu_reader_milliseconds{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1199,7 +1236,7 @@
           "step": 10
         },
         {
-          "expr": "dump1090_stats_cpu_background_milliseconds{job=\"dump1090\", time_period=\"last1min\"}",
+          "expr": "dump1090_stats_cpu_background_milliseconds{job=\"dump1090\", time_period=\"last1min\", instance=~\"^$instance$\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1380,6 +1417,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -1490,6 +1528,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -1600,6 +1639,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -1710,6 +1750,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -1778,6 +1819,7 @@
       "targets": [
         {
           "expr": "dump1090_recent_aircraft_max_range_by_direction{time_period=\"latest\", instance=~\"^$instance$\"}",
+          "instant": false,
           "interval": "",
           "legendFormat": "{{instance}}: {{direction}}",
           "refId": "A"
@@ -1886,6 +1928,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -1996,6 +2039,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -2106,6 +2150,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,
@@ -2216,6 +2261,7 @@
           "show": true
         },
         {
+          "decimals": 1,
           "format": "lengthm",
           "label": null,
           "logBase": 1,

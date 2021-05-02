@@ -58,7 +58,8 @@ Specs = {
             "recent_aircraft_with_position",
             "Number of aircraft recently observed with position",
         ),
-        (   "observed_with_direction",
+        (
+            "observed_with_direction",
             "recent_aircraft_with_direction",
             "Number of aircraft recently observed with direction relative to receiver",
         ),

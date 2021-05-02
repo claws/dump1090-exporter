@@ -238,16 +238,12 @@ The following steps are used to make a new software release:
       $ source venv/bin/activate
       (d1090exp) $
 
-- Apply the code style formatter.
+- Perform checks (style, lint, types).
 
   .. code-block:: console
 
-      (d1090exp) $ make style
-
-- Apply the code types checker.
-
-  .. code-block:: console
-
+      (d1090exp) $ make check-style
+      (d1090exp) $ make check-lint
       (d1090exp) $ make check-types
 
 - Create the distribution. This project produces an artefact called a pure

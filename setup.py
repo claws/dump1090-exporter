@@ -22,7 +22,7 @@ with open("README.rst", "r") as f:
 
 
 def parse_requirements(filename):
-    """ Load requirements from a pip requirements file """
+    """Load requirements from a pip requirements file"""
     with open(filename, "r") as fd:
         lines = []
         for line in fd:
@@ -60,6 +60,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "Topic :: System :: Monitoring",
         ],
         entry_points={

@@ -41,27 +41,17 @@ scrub:
 	git clean -x -f -d
 
 
-# help: test                  - run tests
-.PHONY: test
-test:
-	@python -m unittest discover -s tests
-
-
-# help: test-verbose          - run tests [verbosely]
-.PHONY: test-verbose
-test-verbose:
-	@python -m unittest discover -s tests -v
-
-
 # help: check-style           - perform code format compliance check
 .PHONY: check-style
 check-style:
+	@isort . --check-only --profile black
 	@black --check src/dump1090exporter setup.py
 
 
 # help: style                 - perform code style formatting
 .PHONY: style
 style:
+	@isort . --profile black
 	@black src/dump1090exporter setup.py
 
 
@@ -69,6 +59,12 @@ style:
 .PHONY: check-types
 check-types:
 	@cd src; mypy -p dump1090exporter --ignore-missing-imports
+
+
+# help: check-lint            - run static analysis checks
+.PHONY: check-lint
+check-lint:
+	@pylint --rcfile=.pylintrc dump1090exporter setup.py
 
 
 # help: dist                  - create a wheel distribution package

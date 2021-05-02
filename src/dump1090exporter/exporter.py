@@ -10,9 +10,8 @@ import json
 import logging
 import math
 from asyncio.events import AbstractEventLoop
-from math import asin, cos, radians, sin, sqrt, atan, degrees
-
-from typing import Any, Awaitable, Dict, Sequence, Tuple, Union
+from math import asin, atan, cos, degrees, radians, sin, sqrt
+from typing import Any, Dict, Sequence, Tuple, Union
 
 import aiohttp
 from aioprometheus import Gauge, Service
@@ -56,7 +55,7 @@ Position = collections.namedtuple("Position", ["latitude", "longitude"])
 
 
 def build_resources(base: str) -> Dump1090Resources:
-    """ Return a named tuple containing dump1090 resource paths """
+    """Return a named tuple containing dump1090 resource paths"""
     resources = Dump1090Resources(
         base,
         f"{base}/receiver.json",
@@ -65,9 +64,8 @@ def build_resources(base: str) -> Dump1090Resources:
     )
     return resources
 
-def relative_angle(
-    pos1: Position, pos2: Position
-) -> float:
+
+def relative_angle(pos1: Position, pos2: Position) -> float:
     """
     Calculate the direction pos2 relative to pos1. Returns angle in degrees
 
@@ -77,57 +75,65 @@ def relative_angle(
     :returns: angle in degrees
     :rtype: float
     """
-    lat1, lon1, lat2, lon2 = [x for x in (*pos1, *pos2)]
+    lat1, lon1, lat2, lon2 = [
+        x for x in (*pos1, *pos2)  # pylint: disable=unnecessary-comprehension
+    ]
 
-    """
-    Special case - same lat as origin: 90 degs or 270 degs
+    # Special case - same lat as origin: 90 degrees or 270 degrees
+    #
+    #    |
+    # -x-o-x-
+    #    |
 
-       |
-    -x-o-x-
-       |
-    """
     if lat2 == lat1:
         if lon2 > lon1:
             return 90
         else:
             return 270
 
-    deg = degrees(atan((lon2-lon1)/(lat2-lat1)))
+    deg = degrees(atan((lon2 - lon1) / (lat2 - lat1)))
 
-    """
-    Sign of results from the calculation above
+    # Sign of results from the calculation above
+    #
+    #  - | +  (lat2>lat1)
+    # ---o---
+    #  + | -  (lat2<lat1)
+    #
+    # conversion needed to express in terms of 360 degrees
 
-     - | +  (lat2>lat1)
-    ---o---
-     + | -  (lat2<lat1)
-
-    conversion needed to express in terms of 360 degs
-    """
     if lat2 > lat1:
-        return (360+deg) % 360
+        return (360 + deg) % 360
     else:
-        return 180+deg
+        return 180 + deg
+
 
 # lookup table for directions - each step is 22.5 degrees
 direction_lut = (
     "N",
-    "NE", "NE",
-    "E", "E",
-    "SE", "SE",
-    "S", "S",
-    "SW", "SW",
-    "W", "W",
-    "NW", "NW",
-    "N"
+    "NE",
+    "NE",
+    "E",
+    "E",
+    "SE",
+    "SE",
+    "S",
+    "S",
+    "SW",
+    "SW",
+    "W",
+    "W",
+    "NW",
+    "NW",
+    "N",
 )
 
-def relative_direction(
-    angle: float
-) -> str:
+
+def relative_direction(angle: float) -> str:
     """
     Convert relative angle in degrees into direction (N/NE/E/SE/S/SW/W/NW)
     """
-    return direction_lut[int(angle/22.5)]
+    return direction_lut[int(angle / 22.5)]
+
 
 def haversine_distance(
     pos1: Position, pos2: Position, radius: float = 6371.0e3
@@ -160,7 +166,7 @@ def haversine_distance(
     return distance
 
 
-class Dump1090Exporter(object):
+class Dump1090Exporter:
     """
     This class is responsible for fetching, parsing and exporting dump1090
     metrics to Prometheus.
@@ -215,7 +221,9 @@ class Dump1090Exporter(object):
         self.host = host
         self.port = port
         self.receiver_interval = datetime.timedelta(seconds=receiver_interval)
-        self.receiver_interval_origin_ok = datetime.timedelta(seconds=receiver_interval_origin_ok)
+        self.receiver_interval_origin_ok = datetime.timedelta(
+            seconds=receiver_interval_origin_ok
+        )
         self.aircraft_interval = datetime.timedelta(seconds=aircraft_interval)
         self.stats_interval = datetime.timedelta(seconds=stats_interval)
         self.stats_time_periods = time_periods
@@ -233,7 +241,7 @@ class Dump1090Exporter(object):
         logger.info(f"Origin: {self.origin}")
 
     async def start(self) -> None:
-        """ Start the monitor """
+        """Start the monitor"""
         await self.svr.start(addr=self.host, port=self.port)
         logger.info(f"serving dump1090 prometheus metrics on: {self.svr.metrics_url}")
 
@@ -244,7 +252,7 @@ class Dump1090Exporter(object):
         # fmt: on
 
     async def stop(self) -> None:
-        """ Stop the monitor """
+        """Stop the monitor"""
 
         if self.receiver_task:
             self.receiver_task.cancel()
@@ -307,7 +315,7 @@ class Dump1090Exporter(object):
         self,
         resource: str,
     ) -> Dict[Any, Any]:
-        """ Fetch JSON data from a web or file resource and return a dict """
+        """Fetch JSON data from a web or file resource and return a dict"""
         logger.debug(f"fetching {resource}")
         if resource.startswith("http"):
             try:
@@ -323,8 +331,8 @@ class Dump1090Exporter(object):
             except aiohttp.ClientError as exc:
                 raise Exception(f"Client error {exc}, {resource}") from None
         else:
-            with open(resource, "rt") as f:
-                data = json.loads(f.read())
+            with open(resource, "rt") as fd:
+                data = json.loads(fd.read())
 
         return data
 
@@ -344,13 +352,15 @@ class Dump1090Exporter(object):
                         logger.info(
                             f"Origin successfully extracted from receiver data: {self.origin}"
                         )
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.error(f"Error fetching dump1090 receiver data: {exc}")
 
             # wait until next collection time
             end = datetime.datetime.now()
             if self.origin:
-                wait_seconds = (start + self.receiver_interval_origin_ok - end).total_seconds()
+                wait_seconds = (
+                    start + self.receiver_interval_origin_ok - end
+                ).total_seconds()
             else:
                 wait_seconds = (start + self.receiver_interval - end).total_seconds()
             await asyncio.sleep(wait_seconds)
@@ -365,7 +375,7 @@ class Dump1090Exporter(object):
             try:
                 stats = await self._fetch(self.resources.stats)
                 self.process_stats(stats, time_periods=self.stats_time_periods)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.error(f"Error fetching dump1090 stats data: {exc}")
 
             # wait until next collection time
@@ -383,7 +393,7 @@ class Dump1090Exporter(object):
             try:
                 aircraft = await self._fetch(self.resources.aircraft)
                 self.process_aircraft(aircraft)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 logger.error(f"Error fetching dump1090 aircraft data: {exc}")
 
             # wait until next collection time
@@ -451,10 +461,28 @@ class Dump1090Exporter(object):
         aircraft_with_pos = 0
         aircraft_with_mlat = 0
         aircraft_max_range = 0.0
-        aircraft_direction = {"N": 0, "NE": 0, "E": 0, "SE": 0, "S": 0, "SW": 0, "W": 0, "NW": 0}
-        aircraft_direction_max_range = {"N": 0.0, "NE": 0.0, "E": 0.0, "SE": 0.0, "S": 0.0, "SW": 0.0, "W": 0.0, "NW": 0.0}
+        aircraft_direction = {
+            "N": 0,
+            "NE": 0,
+            "E": 0,
+            "SE": 0,
+            "S": 0,
+            "SW": 0,
+            "W": 0,
+            "NW": 0,
+        }
+        aircraft_direction_max_range = {
+            "N": 0.0,
+            "NE": 0.0,
+            "E": 0.0,
+            "SE": 0.0,
+            "S": 0.0,
+            "SW": 0.0,
+            "W": 0.0,
+            "NW": 0.0,
+        }
         # Filter aircraft to only those that have been seen within the
-        # last n seconds to minimise contributions from aged obsevations.
+        # last n seconds to minimise contributions from aged observations.
         for a in aircraft["aircraft"]:
             if a["seen"] < threshold:
                 aircraft_observed += 1
@@ -467,7 +495,9 @@ class Dump1090Exporter(object):
                     if distance > aircraft_max_range:
                         aircraft_max_range = distance
 
-                    a["rel_angle"] = relative_angle(self.origin, Position(a["lat"], a["lon"]))
+                    a["rel_angle"] = relative_angle(
+                        self.origin, Position(a["lat"], a["lon"])
+                    )
                     a["rel_direction"] = relative_direction(a["rel_angle"])
                     aircraft_direction[a["rel_direction"]] += 1
                     if distance > aircraft_direction_max_range[a["rel_direction"]]:
@@ -485,10 +515,12 @@ class Dump1090Exporter(object):
         d["max_range"].set(labels, aircraft_max_range)
         d["messages_total"].set(labels, messages)
 
-        for dir in aircraft_direction:
-            labels = dict(time_period="latest", direction=dir)
-            d["observed_with_direction"].set(labels, aircraft_direction[dir])
-            d["max_range_by_direction"].set(labels, aircraft_direction_max_range[dir])
+        for direction in aircraft_direction:
+            labels = dict(time_period="latest", direction=direction)
+            d["observed_with_direction"].set(labels, aircraft_direction[direction])
+            d["max_range_by_direction"].set(
+                labels, aircraft_direction_max_range[direction]
+            )
 
         logger.debug(
             f"aircraft: observed={aircraft_observed}, "

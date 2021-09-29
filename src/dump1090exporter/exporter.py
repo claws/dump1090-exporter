@@ -307,7 +307,7 @@ class Dump1090Exporter:
                 d[name] = self._create_gauge_metric(label, doc)
 
     def _create_gauge_metric(self, label, doc):
-        gauge = Gauge("dump1090_{}".format(label), doc)
+        gauge = Gauge(f"dump1090_{label}", doc)
         self.svr.register(gauge)
         return gauge
 
@@ -331,7 +331,7 @@ class Dump1090Exporter:
             except aiohttp.ClientError as exc:
                 raise Exception(f"Client error {exc}, {resource}") from None
         else:
-            with open(resource, "rt") as fd:
+            with open(resource, "rt") as fd:  # pylint: disable=unspecified-encoding
                 data = json.loads(fd.read())
 
         return data
@@ -419,9 +419,9 @@ class Dump1090Exporter:
 
             labels = dict(time_period=time_period)
 
-            for key in metrics:
+            for key, gauge in metrics.items():
                 d = tp_stats[key] if key else tp_stats
-                for name, metric in metrics[key].items():
+                for name, metric in gauge.items():
                     try:
                         value = d[name]
                         # 'accepted' values are in a list
@@ -431,7 +431,7 @@ class Dump1090Exporter:
                         # 'signal' and 'peak_signal' are not present if
                         # there are no aircraft.
                         if name not in ["peak_signal", "signal"]:
-                            key_str = " {} ".format(key) if key else " "
+                            key_str = f" {key} " if key else " "
                             logger.warning(
                                 f"Problem extracting{key_str}item '{name}' from: {d}"
                             )
@@ -515,9 +515,9 @@ class Dump1090Exporter:
         d["max_range"].set(labels, aircraft_max_range)
         d["messages_total"].set(labels, messages)
 
-        for direction in aircraft_direction:
+        for direction, value in aircraft_direction.items():
             labels = dict(time_period="latest", direction=direction)
-            d["observed_with_direction"].set(labels, aircraft_direction[direction])
+            d["observed_with_direction"].set(labels, value)
             d["max_range_by_direction"].set(
                 labels, aircraft_direction_max_range[direction]
             )

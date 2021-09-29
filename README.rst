@@ -4,7 +4,7 @@ dump1090 Exporter
 .. note::
 
     This exporter currently works with the mutability fork of dump1090, using
-    the ``/path/to/dump1090-base-dir/data/aicraft.json`` and
+    the ``/path/to/dump1090-base-dir/data/aircraft.json`` and
     ``/path/to/dump1090-base-dir/data/receivers.json`` routes as well as
     with the dump1090-fa fork using the ``/run/dump1090-fa/`` route.
     Those are used by the exporter to fetch metrics.
@@ -331,4 +331,4 @@ The following steps are used to make a new software release:
 
   .. code-block:: console
 
-      (d1090exp) $ docker push clawsicus/dump1090exporter:<verison>
+      (d1090exp) $ docker push clawsicus/dump1090exporter:<version>

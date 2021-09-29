@@ -1,2 +1,2 @@
 aiohttp
-aioprometheus[aiohttp]
+aioprometheus[aiohttp]==21.8.0

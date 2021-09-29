@@ -4,7 +4,7 @@
 
 # Define the specific version of Python you want Make to use when creating
 # a virtual environment.
-PYTHON := python3.8
+PYTHON := python3.9
 
 # Do not remove this block. It is used by the 'help' rule when
 # constructing the help output.

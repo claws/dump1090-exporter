@@ -1,5 +1,7 @@
-black
-isort
-mypy
-pylint
-wheel
+asynctest==0.13.0
+black==21.9b0
+coverage==6.0
+isort==5.9.3
+mypy==0.910
+pylint==2.11.1
+wheel==0.37.0

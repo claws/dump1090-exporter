@@ -1,4 +1,4 @@
-name: Python Package Workflow
+name: CI Pipeline
 
 on:
   push:
@@ -34,18 +34,25 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           ${{ runner.os }}-
-    - name: Check style
+    - name: Check code style
       run: |
         make check-style
+    - name: Install Package
+      run: |
+        pip install .
     - name: Check lint
       run: |
         make check-lint
     - name: Check types
       run: |
         make check-types
-    - name: Check installation
+    - name: Check tests
       run: |
-        pip install .
+        make test
+    - name: Check code coverage
+      if: ${{ matrix.python-version == '3.9' }}
+      run: |
+        make coverage
     - name: Generate package
       run: |
         make dist

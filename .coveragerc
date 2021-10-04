@@ -1,0 +1,23 @@
+[run]
+branch = True
+source =
+    dump1090exporter
+
+[paths]
+source =
+    src/dump1090exporter
+    **/site-packages/dump1090exporter
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+ignore_errors = True
+
+[html]
+directory = coverage

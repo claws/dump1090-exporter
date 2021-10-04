@@ -41,18 +41,42 @@ scrub:
 	git clean -x -f -d
 
 
+# help: test                  - run tests
+.PHONY: test
+test:
+	@python -m unittest discover -s tests
+
+
+# help: test-verbose          - run tests [verbosely]
+.PHONY: test-verbose
+test-verbose:
+	@python -m unittest discover -s tests -v
+
+
+# help: coverage              - perform test coverage checks
+.PHONY: coverage
+coverage:
+	@coverage erase
+	@rm -f .coverage.unit
+	@COVERAGE_FILE=.coverage.unit coverage run -m unittest discover -s tests -v
+	@coverage combine
+	@coverage report
+	@coverage html
+	@coverage xml
+
+
 # help: check-style           - perform code format compliance check
 .PHONY: check-style
 check-style:
 	@isort . --check-only --profile black
-	@black --check src/dump1090exporter setup.py
+	@black --check src/dump1090exporter setup.py tests
 
 
 # help: style                 - perform code style formatting
 .PHONY: style
 style:
 	@isort . --profile black
-	@black src/dump1090exporter setup.py
+	@black src/dump1090exporter setup.py tests
 
 
 # help: check-types           - check type hint annotations
@@ -64,7 +88,7 @@ check-types:
 # help: check-lint            - run static analysis checks
 .PHONY: check-lint
 check-lint:
-	@pylint --rcfile=.pylintrc dump1090exporter setup.py
+	@pylint --rcfile=.pylintrc dump1090exporter setup.py tests
 
 
 # help: dist                  - create a wheel distribution package

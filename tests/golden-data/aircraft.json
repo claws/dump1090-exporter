@@ -1,0 +1,7 @@
+{ "now" : 1633214709.0,
+  "messages" : 318553,
+  "aircraft" : [
+    {"hex":"75025b","version":2,"sil_type":"perhour","mlat":[],"tisb":[],"messages":25,"seen":102.4,"rssi":-1.7},
+    {"hex":"7c495b","flight":"RXA4362 ","alt_baro":7650,"alt_geom":7300,"gs":156.0,"track":269.6,"geom_rate":1024,"squawk":"4023","category":"A2","lat":-34.909653,"lon":138.264509,"nic":8,"rc":186,"seen_pos":2.4,"version":1,"nic_baro":1,"nac_p":9,"nac_v":2,"sil":2,"sil_type":"unknown","mlat":[],"tisb":[],"messages":303,"seen":2.4,"rssi":-2.1}
+  ]
+}

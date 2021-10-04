@@ -9,12 +9,12 @@ import datetime
 import json
 import logging
 import math
-from asyncio.events import AbstractEventLoop
 from math import asin, atan, cos, degrees, radians, sin, sqrt
 from typing import Any, Dict, Sequence, Tuple, Union
 
 import aiohttp
-from aioprometheus import Gauge, Service
+from aioprometheus import Gauge
+from aioprometheus.service import Service
 
 from .metrics import Specs
 
@@ -166,6 +166,22 @@ def haversine_distance(
     return distance
 
 
+def create_gauge_metric(label: str, doc: str, prefix: str = "") -> Gauge:
+    """Create a Gauge metric
+
+    :param label: A label for the metric.
+
+    :param doc: A help string for the metric.
+
+    :param prefix: An optional prefix for the metric label that applies a
+        common start string to the metric which simplifies locating the
+        metrics in Prometheus because they will all be grouped together when
+        searching.
+    """
+    gauge = Gauge(f"{prefix}{label}", doc)
+    return gauge
+
+
 class Dump1090Exporter:
     """
     This class is responsible for fetching, parsing and exporting dump1090
@@ -175,7 +191,7 @@ class Dump1090Exporter:
     def __init__(
         self,
         resource_path: str,
-        host: str = None,
+        host: str = "",
         port: int = 9105,
         aircraft_interval: int = 10,
         stats_interval: int = 60,
@@ -184,7 +200,6 @@ class Dump1090Exporter:
         time_periods: Sequence[str] = ("last1min",),
         origin: PositionType = None,
         fetch_timeout: float = 2.0,
-        loop: AbstractEventLoop = None,
     ) -> None:
         """
         :param resource_path: The base dump1090 resource address. This can be
@@ -214,12 +229,12 @@ class Dump1090Exporter:
           be zero.
         :param fetch_timeout: The number of seconds to wait for a response
           from dump1090.
-        :param loop: the event loop.
         """
         self.resources = build_resources(resource_path)
-        self.loop = loop or asyncio.get_event_loop()
+        self.loop = asyncio.get_event_loop()
         self.host = host
         self.port = port
+        self.prefix = "dump1090_"
         self.receiver_interval = datetime.timedelta(seconds=receiver_interval)
         self.receiver_interval_origin_ok = datetime.timedelta(
             seconds=receiver_interval_origin_ok
@@ -298,18 +313,13 @@ class Dump1090Exporter:
         # aircraft
         d = self.metrics["aircraft"]
         for (name, label, doc) in Specs["aircraft"]:  # type: ignore
-            d[name] = self._create_gauge_metric(label, doc)
+            d[name] = create_gauge_metric(label, doc, prefix=self.prefix)
 
         # statistics
         for group, metrics_specs in Specs["stats"].items():  # type: ignore
             d = self.metrics["stats"].setdefault(group, {})
             for name, label, doc in metrics_specs:
-                d[name] = self._create_gauge_metric(label, doc)
-
-    def _create_gauge_metric(self, label, doc):
-        gauge = Gauge(f"dump1090_{label}", doc)
-        self.svr.register(gauge)
-        return gauge
+                d[name] = create_gauge_metric(label, doc, prefix=self.prefix)
 
     async def _fetch(
         self,

@@ -31,7 +31,7 @@ item, will end up with a Prometheus metric label of:
     dump1090_stats_messages_total
 
 There are multiple sections in the dump1090 stats data file. The Prometheus
-multi-dimensional metrics label are used to expose these. So to obtain the
+multi-dimensional metrics labels are used to expose these. So, to obtain the
 stats metrics for the last1min group you would use a metrics label of:
 
 .. code-block:: console

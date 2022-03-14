@@ -4,13 +4,12 @@ Prometheus.io monitoring server for aggregation and later visualisation.
 """
 
 import asyncio
-import collections
 import datetime
 import json
 import logging
 import math
 from math import asin, atan, cos, degrees, radians, sin, sqrt
-from typing import Any, Dict, Sequence, Tuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Sequence, Tuple
 
 import aiohttp
 from aioprometheus import Gauge
@@ -47,20 +46,26 @@ AircraftKeys = (
     "rel_direction",
 )
 
-Dump1090Resources = collections.namedtuple(
-    "Dump1090Resources", ["base", "receiver", "stats", "aircraft"]
-)
 
-Position = collections.namedtuple("Position", ["latitude", "longitude"])
+class Dump1090Resources(NamedTuple):  # pylint: disable=missing-class-docstring
+    base: str
+    receiver: str
+    stats: str
+    aircraft: str
+
+
+class Position(NamedTuple):  # pylint: disable=missing-class-docstring
+    latitude: float
+    longitude: float
 
 
 def build_resources(base: str) -> Dump1090Resources:
     """Return a named tuple containing dump1090 resource paths"""
     resources = Dump1090Resources(
-        base,
-        f"{base}/receiver.json",
-        f"{base}/stats.json",
-        f"{base}/aircraft.json",
+        base=base,
+        receiver=f"{base}/receiver.json",
+        stats=f"{base}/stats.json",
+        aircraft=f"{base}/aircraft.json",
     )
     return resources
 
@@ -245,9 +250,9 @@ class Dump1090Exporter:
         self.origin = Position(*origin) if origin else None
         self.fetch_timeout = fetch_timeout
         self.svr = Service()
-        self.receiver_task = None  # type: Union[asyncio.Task, None]
-        self.stats_task = None  # type: Union[asyncio.Task, None]
-        self.aircraft_task = None  # type: Union[asyncio.Task, None]
+        self.receiver_task = None  # type: Optional[asyncio.Task]
+        self.stats_task = None  # type: Optional[asyncio.Task]
+        self.aircraft_task = None  # type: Optional[asyncio.Task]
         self.initialise_metrics()
         logger.info(f"Monitoring dump1090 resources at: {self.resources.base}")
         logger.info(

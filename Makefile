@@ -35,12 +35,6 @@ clean:
 	@git clean -X -f -d
 
 
-# help: scrub                 - clean all files, even untracked files
-.PHONY: scrub
-scrub:
-	git clean -x -f -d
-
-
 # help: test                  - run tests
 .PHONY: test
 test:
@@ -65,18 +59,18 @@ coverage:
 	@coverage xml
 
 
-# help: check-style           - perform code format compliance check
-.PHONY: check-style
-check-style:
-	@isort . --check-only --profile black
-	@black --check src/dump1090exporter setup.py tests
-
-
 # help: style                 - perform code style formatting
 .PHONY: style
 style:
 	@isort . --profile black
 	@black src/dump1090exporter setup.py tests
+
+
+# help: check-style           - perform code format compliance check
+.PHONY: check-style
+check-style:
+	@isort . --check-only --profile black
+	@black --check src/dump1090exporter setup.py tests
 
 
 # help: check-types           - check type hint annotations
@@ -91,9 +85,21 @@ check-lint:
 	@pylint --rcfile=.pylintrc dump1090exporter setup.py tests
 
 
+# help: container             - build Docker container
+.PHONY: container
+container: dist
+	@docker build -t clawsicus/dump1090exporter .
+
+
+# help: checks                - perform all checks
+.PHONY: checks
+checks: check-style check-lint check-types test
+
+
 # help: dist                  - create a wheel distribution package
 .PHONY: dist
 dist:
+	@rm -rf dist
 	@python setup.py bdist_wheel
 
 

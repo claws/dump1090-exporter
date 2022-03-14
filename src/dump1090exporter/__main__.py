@@ -13,6 +13,16 @@ except ImportError:
     pass
 
 
+DEFAULT_RESOURCE_PATH = "http://localhost:8080/data"
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 9105
+DEFAULT_RECEIVER_REFRESH_INTERVAL = 10
+DEFAULT_AIRCRAFT_REFRESH_INTERVAL = 10
+DEFAULT_STATISTICS_REFRESH_INTERVAL = 60
+LOGGING_CHOICES = ["error", "warning", "info", "debug"]
+DEFAULT_LOGGING_LEVEL = "info"
+
+
 def main():
     """Run the dump1090 Prometheus exporter"""
 
@@ -23,38 +33,55 @@ def main():
         "--resource-path",
         metavar="<dump1090 url or dirpath>",
         type=str,
-        default="http://localhost:8080",
-        help="dump1090 URL or directory path of the dump1090 service",
+        default=DEFAULT_RESOURCE_PATH,
+        help=f"dump1090 data URL or file system path. Default value is {DEFAULT_RESOURCE_PATH}",
     )
     parser.add_argument(
         "--host",
         metavar="<exporter host>",
         type=str,
-        default="0.0.0.0",
-        help="The address to expose collected metrics from. Default is all interfaces.",
+        default=DEFAULT_HOST,
+        help=(
+            "The address to expose collected metrics from. "
+            f"Default is all interfaces ({DEFAULT_HOST})."
+        ),
     )
     parser.add_argument(
         "--port",
         metavar="<exporter port>",
         type=int,
-        default=9105,
-        help="The port to expose collected metrics from. Default is 9105",
+        default=DEFAULT_PORT,
+        help=f"The port to expose collected metrics from. Default is {DEFAULT_PORT}",
     )
     parser.add_argument(
         "--aircraft-interval",
         metavar="<aircraft data refresh interval>",
         type=int,
-        dest="aircraft_interval",
-        default=10,
-        help="The number of seconds between updates of the aircraft data. Default is 10 seconds",
+        default=DEFAULT_AIRCRAFT_REFRESH_INTERVAL,
+        help=(
+            "The number of seconds between updates of the aircraft data. "
+            f"Default is {DEFAULT_AIRCRAFT_REFRESH_INTERVAL} seconds"
+        ),
     )
     parser.add_argument(
         "--stats-interval",
         metavar="<stats data refresh interval>",
         type=int,
-        dest="stats_interval",
-        default=60,
-        help="The number of seconds between updates of the stats data. Default is 60 seconds",
+        default=DEFAULT_STATISTICS_REFRESH_INTERVAL,
+        help=(
+            "The number of seconds between updates of the stats data. "
+            f"Default is {DEFAULT_STATISTICS_REFRESH_INTERVAL} seconds"
+        ),
+    )
+    parser.add_argument(
+        "--receiver-interval",
+        metavar="<receiver data refresh interval>",
+        type=int,
+        default=DEFAULT_RECEIVER_REFRESH_INTERVAL,
+        help=(
+            "The number of seconds between updates of the receiver data. "
+            f"Default is {DEFAULT_RECEIVER_REFRESH_INTERVAL} seconds"
+        ),
     )
     parser.add_argument(
         "--latitude",
@@ -71,13 +98,20 @@ def main():
         help="The longitude of the receiver position to use as the origin.",
     )
     parser.add_argument(
-        "--debug", action="store_true", default=False, help="Print debug output"
+        "--log-level",
+        choices=LOGGING_CHOICES,
+        default=DEFAULT_LOGGING_LEVEL,
+        type=str,
+        help=f"A logging level from {LOGGING_CHOICES}. Default value is '{DEFAULT_LOGGING_LEVEL}'.",
     )
 
     args = parser.parse_args()
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        format="%(asctime)s.%(msecs)03.0f [%(levelname)s] [%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=getattr(logging, args.log_level.upper()),
+    )
 
     args.origin = None
     if args.latitude and args.longitude:
@@ -90,6 +124,7 @@ def main():
         port=args.port,
         aircraft_interval=args.aircraft_interval,
         stats_interval=args.stats_interval,
+        receiver_interval=args.receiver_interval,
         origin=args.origin,
     )
     loop.run_until_complete(mon.start())

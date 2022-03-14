@@ -34,12 +34,12 @@ Start everything up. This will build a new dump1090exporter container the
 first time it is run.
 
 ```
-$ docker-compose up
+$ docker compose up
 ```
 
   > To stop everything use ctrl+c and then run ``docker-compose down`` to
   > ensure everything is cleanly shutdown. If you also want to remove the
-  > volumes then use ``docker-compose down -v``.
+  > volumes then use ``docker compose down -v``.
 
 You should now have a dump1090exporter, Prometheus and Grafana environment
 running that you can experiment with. Grafana should now be accessible at

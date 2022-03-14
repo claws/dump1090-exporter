@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -93,8 +94,12 @@ class TestExporter(asynctest.TestCase):  # pylint: disable=missing-class-docstri
 
             await de.stop()
 
-            # check calling stop again does not raise errors
-            await de.stop()
-
+            # Check that calling stop again does not raise errors.
+            # Expect aioprometheus to report a warning.
+            with self.assertLogs("aioprometheus.service", logging.WARNING) as alog:
+                await de.stop()
+            self.assertIn(
+                "Prometheus metrics server is already stopped", alog.output[0]
+            )
         finally:
             await ds.stop()

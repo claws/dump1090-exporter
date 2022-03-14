@@ -17,7 +17,7 @@ with open(init_file, "r") as f:  # pylint: disable=unspecified-encoding
     else:
         raise RuntimeError(f"Cannot find __version__ in {init_file}")
 
-with open("README.rst", "r") as f:  # pylint: disable=unspecified-encoding
+with open("README.md", "r") as f:  # pylint: disable=unspecified-encoding
     readme = f.read()
 
 
@@ -40,7 +40,8 @@ if __name__ == "__main__":
         author="Chris Laws",
         author_email="clawsicus@gmail.com",
         description="A Prometheus metrics exporter for the dump1090 Mode S decoder for RTLSDR",
-        long_description="",
+        long_description_content_type="text/markdown",
+        long_description=readme,
         license="MIT",
         keywords=["prometheus", "monitoring", "metrics", "dump1090", "ADSB"],
         url="https://github.com/claws/dump1090-exporter",
@@ -61,6 +62,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Topic :: System :: Monitoring",
         ],
         entry_points={

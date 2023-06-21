@@ -340,7 +340,7 @@ class Dump1090Exporter:
                     ) as resp:
                         if not resp.status == 200:
                             raise Exception(f"Fetch failed {resp.status}: {resource}")
-                        data = await resp.json()
+                        data = await resp.json(content_type=None)
             except asyncio.TimeoutError:
                 raise Exception(f"Request timed out to {resource}") from None
             except aiohttp.ClientError as exc:
